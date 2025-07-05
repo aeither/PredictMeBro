@@ -66,6 +66,12 @@ const Header = () => {
             >
               Demos
             </Link>
+            <Link 
+              to="/supabase-demo" 
+              className={`transition-colors ${location.pathname === "/supabase-demo" ? "text-green-400" : "text-gray-300 hover:text-white"}`}
+            >
+              Realtime Demo
+            </Link>
           </nav>
           
           {renderConnectButton()}

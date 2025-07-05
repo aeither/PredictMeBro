@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SupabaseDemoRouteImport } from './routes/supabase-demo'
 import { Route as RoninRouteImport } from './routes/ronin'
 import { Route as FlowRouteImport } from './routes/flow'
 import { Route as IndexRouteImport } from './routes/index'
@@ -16,6 +17,11 @@ import { Route as DemoTanstackQueryRouteImport } from './routes/demo.tanstack-qu
 import { Route as DemoFormSimpleRouteImport } from './routes/demo.form.simple'
 import { Route as DemoFormAddressRouteImport } from './routes/demo.form.address'
 
+const SupabaseDemoRoute = SupabaseDemoRouteImport.update({
+  id: '/supabase-demo',
+  path: '/supabase-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoninRoute = RoninRouteImport.update({
   id: '/ronin',
   path: '/ronin',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/flow': typeof FlowRoute
   '/ronin': typeof RoninRoute
+  '/supabase-demo': typeof SupabaseDemoRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/flow': typeof FlowRoute
   '/ronin': typeof RoninRoute
+  '/supabase-demo': typeof SupabaseDemoRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/flow': typeof FlowRoute
   '/ronin': typeof RoninRoute
+  '/supabase-demo': typeof SupabaseDemoRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/flow'
     | '/ronin'
+    | '/supabase-demo'
     | '/demo/tanstack-query'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/flow'
     | '/ronin'
+    | '/supabase-demo'
     | '/demo/tanstack-query'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/flow'
     | '/ronin'
+    | '/supabase-demo'
     | '/demo/tanstack-query'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FlowRoute: typeof FlowRoute
   RoninRoute: typeof RoninRoute
+  SupabaseDemoRoute: typeof SupabaseDemoRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   DemoFormAddressRoute: typeof DemoFormAddressRoute
   DemoFormSimpleRoute: typeof DemoFormSimpleRoute
@@ -110,6 +123,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/supabase-demo': {
+      id: '/supabase-demo'
+      path: '/supabase-demo'
+      fullPath: '/supabase-demo'
+      preLoaderRoute: typeof SupabaseDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ronin': {
       id: '/ronin'
       path: '/ronin'
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FlowRoute: FlowRoute,
   RoninRoute: RoninRoute,
+  SupabaseDemoRoute: SupabaseDemoRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   DemoFormAddressRoute: DemoFormAddressRoute,
   DemoFormSimpleRoute: DemoFormSimpleRoute,
