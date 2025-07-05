@@ -4,31 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { io, Socket } from "socket.io-client";
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useAccount } from 'wagmi';
-import { getSocketConfig } from '@/config/socket';
+import { supabase, insertVoteEvent, subscribeToVotes } from '@/config/supabase';
 
 // Define vote event types
 interface VoteEventData {
   poolId: string;
   vote: "yes" | "no";
-  voterAddress?: string;
-  question: string;
+  walletAddress?: string;
   blockchain: string;
-  timestamp: string;
 }
-
-interface ServerToClientEvents {
-  "vote-notification": (data: VoteEventData) => void;
-  "user-count": (count: number) => void;
-}
-
-interface ClientToServerEvents {
-  "vote-event": (data: VoteEventData) => void;
-}
-
-let socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
 interface PredictionPoolProps {
   id: string;
@@ -53,7 +39,7 @@ const PredictionPool = ({
 }: PredictionPoolProps) => {
   const totalVotes = yesVotes + noVotes;
   const [timeLeft, setTimeLeft] = useState('');
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
 
   // Get wallet addresses from both Privy and Wagmi
   const { authenticated: privyAuthenticated } = usePrivy();
@@ -71,66 +57,60 @@ const PredictionPool = ({
     return undefined;
   };
 
-  // Initialize socket connection
+  // Initialize Supabase Realtime connection
   useEffect(() => {
-    const initializeSocket = async () => {
+    const initializeRealtime = async () => {
       try {
-        if (!socket) {
-          const socketConfig = getSocketConfig();
-          console.log('Connecting to Socket.IO server:', socketConfig.url);
+        console.log('Connecting to Supabase Realtime...');
+        
+        // Subscribe to vote events
+        const channel = subscribeToVotes((payload) => {
+          const voteData = payload.data as VoteEventData;
           
-          socket = io(socketConfig.url, socketConfig.options);
+          // Don't show notification for our own votes
+          const currentUserAddress = getCurrentUserAddress();
+          if (voteData.walletAddress && currentUserAddress && 
+              voteData.walletAddress.toLowerCase() === currentUserAddress.toLowerCase()) {
+            return;
+          }
 
-          socket.on("connect", () => {
-            console.log('Socket.IO connected successfully');
-            setIsSocketConnected(true);
-          });
+          // Only show notification for votes on this specific pool
+          if (voteData.poolId === id) {
+            const voteEmoji = voteData.vote === "yes" ? "✅" : "❌";
+            const voterDisplay = voteData.walletAddress 
+              ? `${voteData.walletAddress.slice(0, 6)}...${voteData.walletAddress.slice(-4)}`
+              : "Someone";
+            
+            toast(`${voteEmoji} ${voterDisplay} voted ${voteData.vote.toUpperCase()}!`, {
+              description: `On ${voteData.blockchain} blockchain`,
+              duration: 4000,
+            });
+          }
+        });
 
-          socket.on("disconnect", () => {
-            console.log('Socket.IO disconnected');
-            setIsSocketConnected(false);
-          });
-
-          socket.on("connect_error", (error) => {
-            console.error('Socket.IO connection error:', error);
-            setIsSocketConnected(false);
-          });
-
-          // Listen for vote notifications from other users
-          socket.on("vote-notification", (data) => {
-            // Don't show notification for our own votes
-            const currentUserAddress = getCurrentUserAddress();
-            if (data.voterAddress && currentUserAddress && 
-                data.voterAddress.toLowerCase() === currentUserAddress.toLowerCase()) {
-              return;
-            }
-
-            // Only show notification for votes on this specific pool
-            if (data.poolId === id) {
-              const voteEmoji = data.vote === "yes" ? "✅" : "❌";
-              const voterDisplay = data.voterAddress 
-                ? `${data.voterAddress.slice(0, 6)}...${data.voterAddress.slice(-4)}`
-                : "Someone";
-              
-              toast(`${voteEmoji} ${voterDisplay} voted ${data.vote.toUpperCase()}!`, {
-                description: `On ${data.blockchain} blockchain`,
-                duration: 4000,
-              });
-            }
-          });
+        // Check connection status
+        if (channel) {
+          setIsRealtimeConnected(true);
+          console.log('Supabase Realtime connected successfully');
         }
+
+        // Cleanup function
+        return () => {
+          if (channel) {
+            supabase.removeChannel(channel);
+          }
+        };
+        
       } catch (error) {
-        console.error("Socket.IO initialization error:", error);
-        setIsSocketConnected(false);
+        console.error("Supabase Realtime initialization error:", error);
+        setIsRealtimeConnected(false);
       }
     };
 
-    initializeSocket();
+    const cleanup = initializeRealtime();
 
     return () => {
-      if (socket) {
-        socket.disconnect();
-      }
+      cleanup.then((cleanupFn) => cleanupFn && cleanupFn());
     };
   }, [id]);
 
@@ -157,19 +137,24 @@ const PredictionPool = ({
     return () => clearInterval(interval);
   }, [endsAt]);
 
-  const broadcastVote = (vote: "yes" | "no") => {
-    if (socket && isSocketConnected) {
-      const blockchain = id.startsWith('flow-') ? 'Flow' : id.startsWith('ronin-') ? 'Ronin' : 'Blockchain';
-      const voterAddress = getCurrentUserAddress();
-
-      socket.emit("vote-event", {
-        poolId: id,
-        vote,
-        voterAddress,
-        question,
-        blockchain,
-        timestamp: new Date().toISOString()
-      });
+  const broadcastVoteEvent = async (vote: "yes" | "no") => {
+    const walletAddress = getCurrentUserAddress();
+    
+    if (walletAddress) {
+      try {
+        const blockchain = id.startsWith('flow-') ? 'flow' : 'ronin'; // Default to ronin if not flow
+        
+        await insertVoteEvent({
+          poolId: id,
+          vote,
+          walletAddress,
+          blockchain
+        });
+        
+        console.log('Vote event inserted successfully');
+      } catch (error) {
+        console.error('Error inserting vote event:', error);
+      }
     }
   };
 
@@ -178,8 +163,8 @@ const PredictionPool = ({
       onVote(id, vote);
     }
     
-    // Broadcast vote to other users
-    broadcastVote(vote);
+    // Insert vote event into database to trigger realtime notifications
+    broadcastVoteEvent(vote);
   };
 
   const handleShareToTwitter = () => {
@@ -214,10 +199,10 @@ const PredictionPool = ({
             <Badge variant="secondary" className="text-xs">
               {totalVotes} votes
             </Badge>
-            {isSocketConnected ? (
-              <div className="w-2 h-2 rounded-full bg-green-500" title="Real-time connected"></div>
+            {isRealtimeConnected ? (
+              <div className="w-2 h-2 rounded-full bg-green-500" title="Realtime connected"></div>
             ) : (
-              <div className="w-2 h-2 rounded-full bg-red-500" title="Real-time disconnected"></div>
+              <div className="w-2 h-2 rounded-full bg-red-500" title="Realtime disconnected"></div>
             )}
             <Button
               variant="ghost"
@@ -240,8 +225,8 @@ const PredictionPool = ({
         <div className="flex-1">
           <div className="text-center text-muted-foreground">
             <p className="text-sm">Anonymous voting</p>
-            {isSocketConnected ? (
-              <p className="text-xs text-green-400 mt-1">🔴 Live notifications</p>
+            {isRealtimeConnected ? (
+              <p className="text-xs text-green-400 mt-1">🔴 Live via Supabase DB</p>
             ) : (
               <p className="text-xs text-red-400 mt-1">⚫ Offline mode</p>
             )}

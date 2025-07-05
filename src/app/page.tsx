@@ -1,4 +1,4 @@
-import { ToastDemo } from "@/components/demo/toast-demo";
+import ToastDemo from "@/components/demo/toast-demo";
 import { WagmiDemo } from "@/components/demo/wagmi-demo";
 
 export default function Home() {
