@@ -1,13 +1,5 @@
-import { createServer } from 'http'
-import { Server } from 'socket.io'
-import type { 
-  ToastEventData,
-  VoteEventData,
-  ServerToClientEvents, 
-  ClientToServerEvents, 
-  InterServerEvents, 
-  SocketData 
-} from './src/types/socket.js'
+const { createServer } = require('http')
+const { Server } = require('socket.io')
 
 const port = parseInt(process.env.PORT || '3001', 10)
 
@@ -30,13 +22,8 @@ const server = createServer((req, res) => {
   res.end('Socket.IO Server - Not Found')
 })
 
-// Initialize Socket.IO with proper TypeScript types
-const io = new Server<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
->(server, {
+// Initialize Socket.IO
+const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
       ? (origin, callback) => {
@@ -63,15 +50,15 @@ io.on('connection', (socket) => {
   // Send current user count to all clients
   io.emit('user-count', connectedUsers)
 
-  // Handle toast events with proper typing
-  socket.on('toast-event', (data: ToastEventData) => {
+  // Handle toast events
+  socket.on('toast-event', (data) => {
     console.log('Broadcasting toast event:', data)
     // Broadcast to all other connected clients
     socket.broadcast.emit('toast-notification', data)
   })
 
-  // Handle vote events with proper typing
-  socket.on('vote-event', (data: VoteEventData) => {
+  // Handle vote events
+  socket.on('vote-event', (data) => {
     console.log('Broadcasting vote event:', data)
     // Broadcast to all other connected clients
     socket.broadcast.emit('vote-notification', data)

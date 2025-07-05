@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev\" \"npm run socket:dev\"",
-    "socket:dev": "ts-node --esm server-socket.ts",
-    "socket:start": "NODE_ENV=production ts-node --esm server-socket.ts",
+    "socket:dev": "node server-socket.js",
+    "socket:start": "NODE_ENV=production node server-socket.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -41,9 +41,5 @@
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
-  },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
   }
 }

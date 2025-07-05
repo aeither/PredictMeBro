@@ -15,9 +15,7 @@ RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
 
 # Copy only necessary files for Socket.IO server
-COPY server-socket.ts ./
-COPY tsconfig.json ./
-COPY src/types ./src/types
+COPY server-socket.js ./
 
 # Install curl for health check
 RUN apk add --no-cache curl
