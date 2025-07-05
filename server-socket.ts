@@ -7,7 +7,7 @@ import type {
   ClientToServerEvents, 
   InterServerEvents, 
   SocketData 
-} from './src/types/socket'
+} from './src/types/socket.js'
 
 const port = parseInt(process.env.PORT || '3001', 10)
 
