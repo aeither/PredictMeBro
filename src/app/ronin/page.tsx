@@ -15,25 +15,25 @@ interface Pool {
   participationAmount: number;
 }
 
-export default function RoninMarkets() {
+export default function RoninPage() {
   const [pools, setPools] = useState<Pool[]>([
     {
       id: "ronin-1",
-      question: "Will Axie Infinity launch new gameplay mechanics this year?",
-      totalAmount: 400,
-      yesVotes: 22,
-      noVotes: 18,
+      question: "Will Axie Infinity reach $100 by end of 2024?",
+      totalAmount: 200,
+      yesVotes: 12,
+      noVotes: 8,
       endsAt: "2024-12-31",
       participationAmount: 10,
     },
     {
-      id: "ronin-2", 
-      question: "Will RON token reach $5 before Q2 2024?",
-      totalAmount: 275,
-      yesVotes: 15,
-      noVotes: 10,
-      endsAt: "2024-06-30",
-      participationAmount: 12,
+      id: "ronin-2",
+      question: "Will Ronin Network launch new gaming titles this quarter?",
+      totalAmount: 450,
+      yesVotes: 25,
+      noVotes: 15,
+      endsAt: "2024-03-31",
+      participationAmount: 20,
     },
   ]);
 
@@ -70,19 +70,19 @@ export default function RoninMarkets() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a', color: '#ededed' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="bg-gradient-hero rounded-2xl p-8 mb-8" style={{ 
-            background: 'linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(40, 167, 69, 0.1))',
-            border: '1px solid rgba(0, 123, 255, 0.2)'
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1))',
+            border: '1px solid rgba(59, 130, 246, 0.2)'
           }}>
             <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: '#ededed' }}>
               Ronin Prediction Markets
             </h1>
             <p className="text-xl mb-8 max-w-2xl mx-auto" style={{ color: '#a0a0a0' }}>
-              Create and participate in prediction markets on Ronin blockchain. Connect with Ronin Wallet.
+              Create and participate in prediction markets on Ronin blockchain. Connect with Tanto Widget.
             </p>
             <CreatePoolModal onCreatePool={handleCreatePool} />
           </div>

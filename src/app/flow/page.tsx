@@ -15,7 +15,7 @@ interface Pool {
   participationAmount: number;
 }
 
-export default function FlowMarkets() {
+export default function FlowPage() {
   const [pools, setPools] = useState<Pool[]>([
     {
       id: "flow-1",
@@ -70,7 +70,7 @@ export default function FlowMarkets() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a', color: '#ededed' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">

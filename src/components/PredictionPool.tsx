@@ -1,7 +1,9 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { Twitter } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface PredictionPoolProps {
   id: string;
@@ -56,14 +58,51 @@ const PredictionPool = ({
     }
   };
 
+  const handleShareToTwitter = () => {
+    const yesPercentage = totalVotes > 0 ? Math.round((yesVotes / totalVotes) * 100) : 0;
+    const noPercentage = totalVotes > 0 ? Math.round((noVotes / totalVotes) * 100) : 0;
+    
+    // Determine the blockchain based on pool ID
+    const blockchain = id.startsWith('flow-') ? 'Flow' : id.startsWith('ronin-') ? 'Ronin' : 'Blockchain';
+    
+    // Create engaging tweet text
+    const tweetText = `🔮 Prediction Market Alert!\n\n"${question}"\n\n💰 Pool: $${totalAmount} | Entry: $${participationAmount}\n⏰ ${timeLeft === 'Ended' ? 'Pool Ended' : `Ends in: ${timeLeft}`}\n\n🚀 Vote on ${blockchain} blockchain at PredictMeBro!\n\n#PredictionMarket #${blockchain} #Web3 #Crypto`;
+    
+    // Get current URL for sharing
+    const currentUrl = window.location.origin + window.location.pathname;
+    
+    // Create Twitter/X sharing URL
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(currentUrl)}`;
+    
+    // Open Twitter in new tab
+    window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+    
+    // Show success toast
+    toast.success("Opening Twitter/X", {
+      description: "Share this prediction with your friends!",
+      duration: 3000,
+    });
+  };
+
   return (
     <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] h-full flex flex-col">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg text-foreground flex-1">{question}</CardTitle>
-          <Badge variant="secondary" className="text-xs shrink-0">
-            {totalVotes} votes
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="secondary" className="text-xs">
+              {totalVotes} votes
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShareToTwitter}
+              className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+              title="Share on Twitter/X"
+            >
+              <Twitter className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Entry: ${participationAmount}</span>
