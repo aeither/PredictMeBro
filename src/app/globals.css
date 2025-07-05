@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Additional styles for UI components */
+@layer base {
+  * {
+    border-color: hsl(240 3.7% 15.9%);
+  }
+}
+
+@layer utilities {
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, hsl(263 70% 50%), hsl(220 70% 50%));
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(135deg, hsl(142 76% 36%), hsl(120 76% 50%));
+  }
+  
+  .bg-gradient-card {
+    background: linear-gradient(135deg, hsl(240 3.7% 15.9%), hsl(240 5% 18%));
+  }
+  
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, hsl(263 70% 50% / 0.1), hsl(220 70% 50% / 0.1));
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 40px hsl(263 70% 50% / 0.3);
+  }
+}
