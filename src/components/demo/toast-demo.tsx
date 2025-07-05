@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { io, Socket } from "socket.io-client"
+import { getSocketConfig } from '@/config/socket'
 import type { 
   ToastEventData, 
   ServerToClientEvents, 
@@ -19,16 +20,24 @@ export function ToastDemo() {
     // Initialize Socket.IO connection
     const initializeSocket = async () => {
       try {
+        const socketConfig = getSocketConfig()
+        console.log('Toast Demo connecting to Socket.IO server:', socketConfig.url)
+        
         // Connect to Socket.IO server
-        socket = io()
+        socket = io(socketConfig.url, socketConfig.options)
 
         socket.on("connect", () => {
-          console.log("Connected to Socket.IO server")
+          console.log("Toast Demo connected to Socket.IO server")
           setIsConnected(true)
         })
 
         socket.on("disconnect", () => {
-          console.log("Disconnected from Socket.IO server")
+          console.log("Toast Demo disconnected from Socket.IO server")
+          setIsConnected(false)
+        })
+
+        socket.on("connect_error", (error) => {
+          console.error("Toast Demo Socket.IO connection error:", error)
           setIsConnected(false)
         })
 
@@ -69,7 +78,8 @@ export function ToastDemo() {
         })
 
       } catch (error) {
-        console.error("Socket.IO initialization error:", error)
+        console.error("Toast Demo Socket.IO initialization error:", error)
+        setIsConnected(false)
       }
     }
 
@@ -172,6 +182,12 @@ export function ToastDemo() {
       <div className="text-sm text-gray-600 dark:text-gray-400">
         <p>🌐 Toast notifications are broadcast to all connected devices!</p>
         <p>Open this page in multiple tabs or devices to see real-time sync.</p>
+        <p className="mt-2">
+          <strong>Environment:</strong> {process.env.NODE_ENV || 'development'}
+        </p>
+        <p>
+          <strong>Socket URL:</strong> {isConnected ? 'Connected' : 'Connecting...'}
+        </p>
       </div>
     </div>
   )

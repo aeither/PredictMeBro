@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { io, Socket } from "socket.io-client";
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useAccount } from 'wagmi';
+import { getSocketConfig } from '@/config/socket';
 
 // Define vote event types
 interface VoteEventData {
@@ -75,13 +76,23 @@ const PredictionPool = ({
     const initializeSocket = async () => {
       try {
         if (!socket) {
-          socket = io();
+          const socketConfig = getSocketConfig();
+          console.log('Connecting to Socket.IO server:', socketConfig.url);
+          
+          socket = io(socketConfig.url, socketConfig.options);
 
           socket.on("connect", () => {
+            console.log('Socket.IO connected successfully');
             setIsSocketConnected(true);
           });
 
           socket.on("disconnect", () => {
+            console.log('Socket.IO disconnected');
+            setIsSocketConnected(false);
+          });
+
+          socket.on("connect_error", (error) => {
+            console.error('Socket.IO connection error:', error);
             setIsSocketConnected(false);
           });
 
@@ -110,6 +121,7 @@ const PredictionPool = ({
         }
       } catch (error) {
         console.error("Socket.IO initialization error:", error);
+        setIsSocketConnected(false);
       }
     };
 
@@ -202,8 +214,10 @@ const PredictionPool = ({
             <Badge variant="secondary" className="text-xs">
               {totalVotes} votes
             </Badge>
-            {isSocketConnected && (
+            {isSocketConnected ? (
               <div className="w-2 h-2 rounded-full bg-green-500" title="Real-time connected"></div>
+            ) : (
+              <div className="w-2 h-2 rounded-full bg-red-500" title="Real-time disconnected"></div>
             )}
             <Button
               variant="ghost"
@@ -226,8 +240,10 @@ const PredictionPool = ({
         <div className="flex-1">
           <div className="text-center text-muted-foreground">
             <p className="text-sm">Anonymous voting</p>
-            {isSocketConnected && (
+            {isSocketConnected ? (
               <p className="text-xs text-green-400 mt-1">🔴 Live notifications</p>
+            ) : (
+              <p className="text-xs text-red-400 mt-1">⚫ Offline mode</p>
             )}
           </div>
         </div>
