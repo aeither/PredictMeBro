@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { supabase, insertToastEvent, subscribeToToasts } from '@/config/supabase'
+import { testSupabaseConnection } from '@/utils/test-supabase'
 
 export default function ToastDemo() {
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
@@ -77,6 +78,31 @@ export default function ToastDemo() {
     }
   }
 
+  const handleTestConnection = async () => {
+    toast.loading("Testing Supabase connection...", { id: 'connection-test' })
+    
+    try {
+      const isWorking = await testSupabaseConnection()
+      
+      if (isWorking) {
+        toast.success("Connection successful!", { 
+          id: 'connection-test',
+          description: "Database and realtime are working correctly" 
+        })
+      } else {
+        toast.error("Connection failed!", { 
+          id: 'connection-test',
+          description: "Check console for details and setup guide" 
+        })
+      }
+    } catch (error) {
+      toast.error("Test failed!", { 
+        id: 'connection-test',
+        description: "See console for error details" 
+      })
+    }
+  }
+
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700">
@@ -101,6 +127,21 @@ export default function ToastDemo() {
           <div className="text-sm text-muted-foreground">
             <p>Test real-time notifications across multiple devices/tabs using Supabase database realtime.</p>
             <p className="mt-2">Open this page in multiple tabs or devices to see notifications triggered by database inserts!</p>
+          </div>
+
+          {/* Test Connection Button */}
+          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <h4 className="font-semibold mb-2 text-yellow-400">⚠️ Setup Required</h4>
+            <p className="text-sm text-muted-foreground mb-3">
+              If you're getting "Database error" messages, click the test button below to diagnose the issue.
+            </p>
+            <Button 
+              onClick={handleTestConnection}
+              variant="outline"
+              className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+            >
+              🔍 Test Supabase Connection
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
