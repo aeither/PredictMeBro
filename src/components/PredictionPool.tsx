@@ -4,6 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { io, Socket } from "socket.io-client";
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useAccount } from 'wagmi';
+
+// Define vote event types
+interface VoteEventData {
+  poolId: string;
+  vote: "yes" | "no";
+  voterAddress?: string;
+  question: string;
+  blockchain: string;
+  timestamp: string;
+}
+
+interface ServerToClientEvents {
+  "vote-notification": (data: VoteEventData) => void;
+  "user-count": (count: number) => void;
+}
+
+interface ClientToServerEvents {
+  "vote-event": (data: VoteEventData) => void;
+}
+
+let socket: Socket<ServerToClientEvents, ClientToServerEvents>;
 
 interface PredictionPoolProps {
   id: string;
@@ -28,6 +52,75 @@ const PredictionPool = ({
 }: PredictionPoolProps) => {
   const totalVotes = yesVotes + noVotes;
   const [timeLeft, setTimeLeft] = useState('');
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+
+  // Get wallet addresses from both Privy and Wagmi
+  const { authenticated: privyAuthenticated } = usePrivy();
+  const { wallets: privyWallets } = useWallets();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+
+  // Get current user's address
+  const getCurrentUserAddress = (): string | undefined => {
+    if (wagmiConnected && wagmiAddress) {
+      return wagmiAddress;
+    }
+    if (privyAuthenticated && privyWallets.length > 0) {
+      return privyWallets[0].address;
+    }
+    return undefined;
+  };
+
+  // Initialize socket connection
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        if (!socket) {
+          socket = io();
+
+          socket.on("connect", () => {
+            setIsSocketConnected(true);
+          });
+
+          socket.on("disconnect", () => {
+            setIsSocketConnected(false);
+          });
+
+          // Listen for vote notifications from other users
+          socket.on("vote-notification", (data) => {
+            // Don't show notification for our own votes
+            const currentUserAddress = getCurrentUserAddress();
+            if (data.voterAddress && currentUserAddress && 
+                data.voterAddress.toLowerCase() === currentUserAddress.toLowerCase()) {
+              return;
+            }
+
+            // Only show notification for votes on this specific pool
+            if (data.poolId === id) {
+              const voteEmoji = data.vote === "yes" ? "✅" : "❌";
+              const voterDisplay = data.voterAddress 
+                ? `${data.voterAddress.slice(0, 6)}...${data.voterAddress.slice(-4)}`
+                : "Someone";
+              
+              toast(`${voteEmoji} ${voterDisplay} voted ${data.vote.toUpperCase()}!`, {
+                description: `On ${data.blockchain} blockchain`,
+                duration: 4000,
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Socket.IO initialization error:", error);
+      }
+    };
+
+    initializeSocket();
+
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, [id]);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -52,16 +145,32 @@ const PredictionPool = ({
     return () => clearInterval(interval);
   }, [endsAt]);
 
+  const broadcastVote = (vote: "yes" | "no") => {
+    if (socket && isSocketConnected) {
+      const blockchain = id.startsWith('flow-') ? 'Flow' : id.startsWith('ronin-') ? 'Ronin' : 'Blockchain';
+      const voterAddress = getCurrentUserAddress();
+
+      socket.emit("vote-event", {
+        poolId: id,
+        vote,
+        voterAddress,
+        question,
+        blockchain,
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+
   const handleVote = (vote: "yes" | "no") => {
     if (onVote) {
       onVote(id, vote);
     }
+    
+    // Broadcast vote to other users
+    broadcastVote(vote);
   };
 
   const handleShareToTwitter = () => {
-    const yesPercentage = totalVotes > 0 ? Math.round((yesVotes / totalVotes) * 100) : 0;
-    const noPercentage = totalVotes > 0 ? Math.round((noVotes / totalVotes) * 100) : 0;
-    
     // Determine the blockchain based on pool ID
     const blockchain = id.startsWith('flow-') ? 'Flow' : id.startsWith('ronin-') ? 'Ronin' : 'Blockchain';
     
@@ -93,6 +202,9 @@ const PredictionPool = ({
             <Badge variant="secondary" className="text-xs">
               {totalVotes} votes
             </Badge>
+            {isSocketConnected && (
+              <div className="w-2 h-2 rounded-full bg-green-500" title="Real-time connected"></div>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -114,6 +226,9 @@ const PredictionPool = ({
         <div className="flex-1">
           <div className="text-center text-muted-foreground">
             <p className="text-sm">Anonymous voting</p>
+            {isSocketConnected && (
+              <p className="text-xs text-green-400 mt-1">🔴 Live notifications</p>
+            )}
           </div>
         </div>
         

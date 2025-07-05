@@ -3,7 +3,8 @@ import { parse } from 'url'
 import next from 'next'
 import { Server } from 'socket.io'
 import type { 
-  ToastEventData, 
+  ToastEventData,
+  VoteEventData,
   ServerToClientEvents, 
   ClientToServerEvents, 
   InterServerEvents, 
@@ -57,6 +58,13 @@ app.prepare().then(() => {
       console.log('Broadcasting toast event:', data)
       // Broadcast to all other connected clients
       socket.broadcast.emit('toast-notification', data)
+    })
+
+    // Handle vote events with proper typing
+    socket.on('vote-event', (data: VoteEventData) => {
+      console.log('Broadcasting vote event:', data)
+      // Broadcast to all other connected clients
+      socket.broadcast.emit('vote-notification', data)
     })
 
     socket.on('disconnect', () => {
