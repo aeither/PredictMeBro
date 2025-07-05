@@ -1,10 +1,9 @@
+import { PrivyProvider } from '@privy-io/react-auth'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { PrivyProvider } from '@privy-io/react-auth'
-import { WagmiProvider } from 'wagmi'
 import { Toaster } from 'sonner'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
 
 import { config } from './config/wagmi'
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx'
@@ -12,8 +11,8 @@ import * as TanStackQueryProvider from './integrations/tanstack-query/root-provi
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 
-import './styles.css'
 import reportWebVitals from './reportWebVitals.ts'
+import './styles.css'
 
 // Create a new router instance
 const router = createRouter({

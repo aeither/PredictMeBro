@@ -1,6 +1,7 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { ESCROW_CONTRACT_ADDRESS, ESCROW_CONTRACT_ABI } from '@/config/contract'
+import { validatePoolData } from '@/utils/test-data'
 
 export interface Pool {
   id: bigint
@@ -47,27 +48,56 @@ export const useEscrowContract = () => {
 
   // Create a new pool
   const createPool = async (
-    creatorName: string,
     question: string,
     priceInEth: number,
-    durationInDays: number = 30
+    durationInHours: number = 1
   ) => {
     if (!address) throw new Error('Wallet not connected')
 
-    const price = parseEther(priceInEth.toString())
-    const startTime = BigInt(Math.floor(Date.now() / 1000))
-    const endTime = startTime + BigInt(durationInDays * 24 * 60 * 60)
+    // Validate input data
+    const validation = validatePoolData(
+      question,
+      priceInEth.toString(),
+      durationInHours.toString()
+    )
     
-    // For now, we'll use the question as the walrus hash
-    // In a real implementation, you'd upload to Walrus and get the hash
-    const walrusHash = question
+    if (!validation.valid) {
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`)
+    }
+
+    // Convert price to Wei (smallest unit)
+    const priceInWei = parseEther(priceInEth.toString())
+    
+    // For the pool prize (value), let's use 10x the participation price
+    // This matches the pattern from your successful transaction (100 vs 1000)
+    const poolPrizeInWei = priceInWei * BigInt(10)
+    
+    // Add 1 minute buffer to ensure start time is in the future
+    const startTime = BigInt(Math.floor(Date.now() / 1000) + 60) // +60 seconds buffer
+    const endTime = startTime + BigInt(durationInHours * 60 * 60) // Convert hours to seconds
+    
+    // Use wallet address as creator name
+    const creatorName = address
+    
+    // Use a simple placeholder for walrus hash - in production you'd upload to Walrus
+    const walrusHash = `pool_${Date.now()}_${question.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '_')}`
+
+    console.log('Creating pool with params:', {
+      creatorName,
+      priceInWei: priceInWei.toString(),
+      startTime: startTime.toString(),
+      endTime: endTime.toString(),
+      walrusHash,
+      poolPrizeInWei: poolPrizeInWei.toString(),
+      currentTime: Math.floor(Date.now() / 1000),
+    })
 
     return writeContract({
       address: ESCROW_CONTRACT_ADDRESS,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'createPool',
-      args: [creatorName, price, startTime, endTime, walrusHash],
-      value: price, // Pool prize
+      args: [creatorName, priceInWei, startTime, endTime, walrusHash],
+      value: poolPrizeInWei, // Send 10x the participation price as pool prize
     })
   }
 

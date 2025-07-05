@@ -25,17 +25,28 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [participationAmount, setParticipationAmount] = useState("");
-  const [creatorName, setCreatorName] = useState("");
+  const [durationHours, setDurationHours] = useState("1");
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createPool } = useEscrowContract();
   const { address } = useAccount();
   const { authenticated } = usePrivy();
 
+  // Function to fill form with working test data
+  const fillTestData = () => {
+    setQuestion("Will Bitcoin reach $100,000 by end of 2024?");
+    setParticipationAmount("0.01");
+    setDurationHours("2");
+    toast({
+      title: "Test Data Loaded",
+      description: "Form filled with working test data. You can edit and submit.",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!question.trim() || !participationAmount || !creatorName.trim()) {
+    if (!question.trim() || !participationAmount || !durationHours.trim()) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields.",
@@ -63,15 +74,25 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
       return;
     }
 
+    const duration = parseFloat(durationHours);
+    if (duration <= 0) {
+      toast({
+        title: "Invalid Duration",
+        description: "Duration must be greater than 0 hours.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreating(true);
 
     try {
-      await createPool(creatorName.trim(), question.trim(), amount);
+      await createPool(question.trim(), amount, duration);
       
       // Reset form
       setQuestion("");
       setParticipationAmount("");
-      setCreatorName("");
+      setDurationHours("1");
       setOpen(false);
       
       toast({
@@ -110,24 +131,11 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
         <DialogHeader>
           <DialogTitle>Create Prediction Pool</DialogTitle>
           <DialogDescription>
-            Create a new prediction market for others to vote on.
+            Create a new prediction market for others to vote on. Creator will be your connected wallet address.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="creatorName" className="text-white">
-              Your Name
-            </Label>
-            <Input
-              id="creatorName"
-              placeholder="e.g., Giovanni"
-              value={creatorName}
-              onChange={(e) => setCreatorName(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500"
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="question" className="text-white">
               Question
@@ -157,6 +165,41 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
               className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500"
             />
             <p className="text-xs text-gray-400">This amount will be required to participate in the pool</p>
+            {participationAmount && (
+              <p className="text-xs text-yellow-400">
+                Pool creation cost: {(parseFloat(participationAmount) * 10).toFixed(3)} ETH
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="text-white">
+              Duration (Hours)
+            </Label>
+            <Input
+              id="duration"
+              type="number"
+              placeholder="1"
+              min="0.1"
+              step="0.1"
+              value={durationHours}
+              onChange={(e) => setDurationHours(e.target.value)}
+              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500"
+            />
+            <p className="text-xs text-gray-400">How long the pool will be active</p>
+          </div>
+
+          {/* Test Data Button */}
+          <div className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={fillTestData}
+              disabled={isCreating}
+              className="w-full border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black"
+            >
+              📝 Fill Test Data
+            </Button>
           </div>
           
           <div className="flex space-x-2 pt-4">
