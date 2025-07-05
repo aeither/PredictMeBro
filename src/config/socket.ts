@@ -9,9 +9,9 @@ export const SOCKET_CONFIG = {
       forceNew: true,
     }
   },
-  // Production - using Railway (free tier)
+  // Production - using Railway
   production: {
-    url: process.env.NEXT_PUBLIC_SOCKET_URL || 'https://predictmebro-socket.up.railway.app',
+    url: process.env.NEXT_PUBLIC_SOCKET_URL || 'https://predictmebro-production.up.railway.app',
     options: {
       transports: ['websocket', 'polling'],
       timeout: 20000,
