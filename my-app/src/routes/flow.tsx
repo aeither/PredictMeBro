@@ -58,7 +58,7 @@ function FlowPage() {
 
         {/* Pools Grid */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6" style={{ color: '#ededed' }}>Active Flow Pools</h2>
+          <h2 className="text-2xl font-bold mb-6" style={{ color: '#ededed' }}>All Flow Pools</h2>
           <AllPoolsList onVote={handleVote} />
         </div>
       </main>

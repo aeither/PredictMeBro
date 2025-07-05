@@ -1,7 +1,9 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi'
+import { readContract } from 'wagmi/actions'
 import { parseEther, formatEther } from 'viem'
 import { ESCROW_CONTRACT_ADDRESS, ESCROW_CONTRACT_ABI } from '@/config/contract'
 import { validatePoolData } from '@/utils/test-data'
+import { config } from '@/config/wagmi'
 import { useState, useEffect } from 'react'
 
 export interface Pool {
@@ -182,44 +184,110 @@ export const useEscrowContract = () => {
   }
 }
 
-// Hook to get pool data for a specific pool ID
-export const usePoolData = (poolId: bigint) => {
+// Hook to fetch all pools data
+export const useAllPoolsData = () => {
   const { address } = useAccount()
+  const { totalPools, convertPoolData } = useEscrowContract()
   
-  const poolInfo = useReadContract({
-    address: ESCROW_CONTRACT_ADDRESS,
-    abi: ESCROW_CONTRACT_ABI,
-    functionName: 'getPoolInfo',
-    args: [poolId, (address as `0x${string}`) || '0x0000000000000000000000000000000000000000'],
-  })
+  const [pools, setPools] = useState<ContractPool[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const voteCounts = useReadContract({
-    address: ESCROW_CONTRACT_ADDRESS,
-    abi: ESCROW_CONTRACT_ABI,
-    functionName: 'getVoteCounts',
-    args: [poolId],
-  })
+  const fetchPoolsData = async () => {
+    if (!totalPools || totalPools === 0) {
+      setPools([])
+      return
+    }
 
-  const walrusHash = useReadContract({
-    address: ESCROW_CONTRACT_ADDRESS,
-    abi: ESCROW_CONTRACT_ABI,
-    functionName: 'getPoolWalrusHash',
-    args: [poolId],
-  })
+    setIsLoading(true)
+    setError(null)
+    console.log(`Fetching ${totalPools} pools...`)
 
-  const isLoading = poolInfo.isLoading || voteCounts.isLoading || walrusHash.isLoading
-  const error = poolInfo.error || voteCounts.error || walrusHash.error
+    try {
+      const poolsData: ContractPool[] = []
+      
+             // Fetch all pools in parallel
+       const poolPromises = Array.from({ length: totalPools }, async (_, i) => {
+         try {
+           const poolId = BigInt(i)
+           
+           console.log(`Fetching pool ${i} data...`)
+           
+           // Fetch all data for this pool
+           const [poolInfo, voteCounts, walrusHash] = await Promise.all([
+             readContract(config, {
+               address: ESCROW_CONTRACT_ADDRESS,
+               abi: ESCROW_CONTRACT_ABI,
+               functionName: 'getPoolInfo',
+               args: [poolId, (address as `0x${string}`) || '0x0000000000000000000000000000000000000000'],
+             }),
+             readContract(config, {
+               address: ESCROW_CONTRACT_ADDRESS,
+               abi: ESCROW_CONTRACT_ABI,
+               functionName: 'getVoteCounts',
+               args: [poolId],
+             }),
+             readContract(config, {
+               address: ESCROW_CONTRACT_ADDRESS,
+               abi: ESCROW_CONTRACT_ABI,
+               functionName: 'getPoolWalrusHash',
+               args: [poolId],
+             })
+           ])
+
+          const [poolData, participantCount] = poolInfo as [any, bigint, bigint]
+          const [yesVotes, noVotes] = voteCounts as readonly [bigint, bigint]
+          
+          console.log(`Pool ${i} data:`, {
+            isActive: poolData.isActive,
+            creatorName: poolData.creatorName,
+            participantCount: participantCount.toString(),
+            yesVotes: yesVotes.toString(),
+            noVotes: noVotes.toString(),
+            walrusHash: walrusHash as string
+          })
+
+          const pool = convertPoolData(
+            poolData,
+            participantCount,
+            { yesVotes, noVotes },
+            walrusHash as string,
+            i.toString()
+          )
+
+          return pool
+        } catch (error) {
+          console.error(`Error fetching pool ${i}:`, error)
+          return null
+        }
+      })
+
+      const results = await Promise.all(poolPromises)
+      const validPools = results.filter(pool => pool !== null) as ContractPool[]
+      
+      console.log(`Successfully loaded ${validPools.length} out of ${totalPools} pools`)
+      setPools(validPools)
+    } catch (error) {
+      console.error('Error fetching pools:', error)
+      setError('Failed to fetch pools')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch when totalPools changes
+  useEffect(() => {
+    if (totalPools > 0) {
+      fetchPoolsData()
+    } else {
+      setPools([])
+    }
+  }, [totalPools, address])
 
   return {
-    poolInfo: poolInfo.data,
-    voteCounts: voteCounts.data,
-    walrusHash: walrusHash.data,
+    pools,
     isLoading,
     error,
-    refetch: () => {
-      poolInfo.refetch()
-      voteCounts.refetch()
-      walrusHash.refetch()
-    }
+    refetch: fetchPoolsData,
   }
 } 
