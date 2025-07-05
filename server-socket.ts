@@ -39,7 +39,14 @@ const io = new Server<
 >(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ["https://predict-me-bro.vercel.app", "https://predictmebro.com"] // Add your production domains
+      ? (origin, callback) => {
+          // Allow any vercel.app domain or your custom domains
+          if (!origin || origin.includes('vercel.app') || origin.includes('predictmebro.com')) {
+            callback(null, true)
+          } else {
+            callback(new Error('Not allowed by CORS'))
+          }
+        }
       : ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST"],
     credentials: true
@@ -78,11 +85,11 @@ io.on('connection', (socket) => {
   })
 })
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`> Socket.IO server running on port ${port}`)
   console.log(`> Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`> CORS origins: ${process.env.NODE_ENV === 'production' ? 'Production domains' : 'Localhost'}`)
-  console.log(`> Health check available at: http://localhost:${port}/health`)
+  console.log(`> Health check available at: http://0.0.0.0:${port}/health`)
 })
 
 // Handle graceful shutdown
