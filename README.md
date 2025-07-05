@@ -1,6 +1,44 @@
-# PredictMePro
+# PredictMeBro
 
-A Next.js application with integrated Sonner toast notifications and Wagmi for Ethereum wallet connectivity.
+<div align="center">
+  <img src="public/logo.png" alt="PredictMeBro Logo" width="200" height="200">
+</div>
+
+A decentralized sentiment prediction market platform where users can vote "Yes" or "No" on various predictions and market outcomes. Built with Next.js, Socket.IO for real-time updates, and Wagmi for Ethereum wallet integration.
+
+## The Problem We Solve
+
+🔍 **Lack of Accessible Prediction Markets**
+- Traditional prediction markets are complex and intimidating for everyday users
+- High barriers to entry with complicated interfaces and processes
+- Limited real-time engagement and community interaction
+
+📊 **Unreliable Sentiment Data**
+- Current sentiment analysis tools lack human intuition and context
+- Centralized platforms can manipulate or bias prediction outcomes
+- No transparent way to track collective market sentiment over time
+
+💰 **Missed Opportunities for Crowd Intelligence**
+- Individual predictions are often less accurate than collective wisdom
+- No easy way to monetize prediction skills and market knowledge
+- Limited platforms that combine social sentiment with financial incentives
+
+## Our Solution
+
+✅ **Simple Yes/No Voting Interface**
+- Intuitive binary choice system that anyone can understand and use
+- Real-time voting results with live updates across all connected devices
+- Seamless wallet integration for secure, blockchain-based participation
+
+🌐 **Decentralized & Transparent**
+- Blockchain-based voting ensures transparency and immutability
+- Real-time synchronization across multiple devices and users
+- Community-driven predictions with verifiable on-chain results
+
+⚡ **Gamified Prediction Experience**
+- Earn rewards for accurate predictions and active participation
+- Social features with live user counts and community engagement
+- Beautiful, responsive interface with instant feedback and notifications
 
 ## Features
 

@@ -3,12 +3,18 @@
 import { useAccount, useConnect, useDisconnect, useEnsName } from "wagmi"
 import { injected } from "wagmi/connectors"
 import { toast } from "sonner"
+import { useEffect, useState } from "react"
 
 export function WagmiDemo() {
   const { address, isConnected } = useAccount()
   const { data: ensName } = useEnsName({ address })
   const { connect, isPending } = useConnect()
   const { disconnect } = useDisconnect()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleConnect = () => {
     connect({ connector: injected() }, {
@@ -30,6 +36,22 @@ export function WagmiDemo() {
     toast.info("Wallet Disconnected", {
       description: "Your wallet has been disconnected",
     })
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-semibold">Wagmi Demo</h3>
+        
+        <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+          <div className="space-y-2">
+            <p className="text-sm">
+              Loading...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
