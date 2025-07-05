@@ -2,6 +2,7 @@ import { useReadContract, useWriteContract, useAccount } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { ESCROW_CONTRACT_ADDRESS, ESCROW_CONTRACT_ABI } from '@/config/contract'
 import { validatePoolData } from '@/utils/test-data'
+import { useState, useEffect } from 'react'
 
 export interface Pool {
   id: bigint
@@ -178,5 +179,47 @@ export const useEscrowContract = () => {
     getPoolWalrusHash,
     convertPoolData,
     refetchTotalPools,
+  }
+}
+
+// Hook to get pool data for a specific pool ID
+export const usePoolData = (poolId: bigint) => {
+  const { address } = useAccount()
+  
+  const poolInfo = useReadContract({
+    address: ESCROW_CONTRACT_ADDRESS,
+    abi: ESCROW_CONTRACT_ABI,
+    functionName: 'getPoolInfo',
+    args: [poolId, (address as `0x${string}`) || '0x0000000000000000000000000000000000000000'],
+  })
+
+  const voteCounts = useReadContract({
+    address: ESCROW_CONTRACT_ADDRESS,
+    abi: ESCROW_CONTRACT_ABI,
+    functionName: 'getVoteCounts',
+    args: [poolId],
+  })
+
+  const walrusHash = useReadContract({
+    address: ESCROW_CONTRACT_ADDRESS,
+    abi: ESCROW_CONTRACT_ABI,
+    functionName: 'getPoolWalrusHash',
+    args: [poolId],
+  })
+
+  const isLoading = poolInfo.isLoading || voteCounts.isLoading || walrusHash.isLoading
+  const error = poolInfo.error || voteCounts.error || walrusHash.error
+
+  return {
+    poolInfo: poolInfo.data,
+    voteCounts: voteCounts.data,
+    walrusHash: walrusHash.data,
+    isLoading,
+    error,
+    refetch: () => {
+      poolInfo.refetch()
+      voteCounts.refetch()
+      walrusHash.refetch()
+    }
   }
 } 

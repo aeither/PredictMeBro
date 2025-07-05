@@ -1,79 +1,34 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from "react";
-import PredictionPool from "@/components/PredictionPool";
 import CreatePoolModal from "@/components/CreatePoolModal";
+import AllPoolsList from "@/components/AllPoolsList";
 import { toast } from "sonner";
 import { useEscrowContract } from "@/hooks/useEscrowContract";
-import type { ContractPool } from "@/hooks/useEscrowContract";
 
 export const Route = createFileRoute('/flow')({
   component: FlowPage,
 })
 
 function FlowPage() {
-  const [pools, setPools] = useState<ContractPool[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { totalPools, vote } = useEscrowContract();
-
-  // Load pools from contract
-  const loadPools = async () => {
-    setIsLoading(true);
-    try {
-      const poolsData: ContractPool[] = [];
-      
-      // For now, we'll show a message if no pools exist
-      // In a real implementation, you'd fetch all pools from the contract
-      if (totalPools === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Load each pool (this is a simplified version)
-      // In practice, you'd want to batch these calls or use events
-      for (let i = 1; i <= totalPools; i++) {
-        // This would fetch pool data using the contract hooks
-        // For now, we'll just set an empty array
-      }
-      
-      setPools(poolsData);
-    } catch (error) {
-      console.error('Error loading pools:', error);
-      toast.error("Failed to load pools", {
-        description: "Could not fetch pools from the contract."
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPools();
-  }, [totalPools]);
+  const { vote } = useEscrowContract();
 
   const handlePoolCreated = () => {
-    // Refetch pools after a new one is created
-    loadPools();
+    // Pools will be automatically refetched by the AllPoolsList component
+    toast.success("Pool created successfully!", {
+      description: "Your prediction pool is now active on Flow blockchain.",
+    });
   };
 
-  const handleVote = async (poolId: string, voteChoice: "yes" | "no") => {
+  const handleVote = async (poolId: string, voteChoice: "yes" | "no", participationAmount: number) => {
     try {
       // Extract the numeric ID from the poolId (remove "flow-" prefix)
       const numericId = BigInt(poolId.replace('flow-', ''));
-      const pool = pools.find(p => p.id === poolId);
       
-      if (!pool) {
-        toast.error("Pool not found");
-        return;
-      }
-
-      await vote(numericId, voteChoice === "yes", pool.participationAmount);
+      await vote(numericId, voteChoice === "yes", participationAmount);
       
       toast.success(`Vote submitted: ${voteChoice.toUpperCase()} on Flow`, {
         description: "Your vote has been recorded on Flow blockchain!",
       });
 
-      // Reload pools to get updated data
-      await loadPools();
     } catch (error) {
       console.error('Error voting:', error);
       toast.error("Failed to vote", {
@@ -104,27 +59,7 @@ function FlowPage() {
         {/* Pools Grid */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6" style={{ color: '#ededed' }}>Active Flow Pools</h2>
-          
-          {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-lg" style={{ color: '#a0a0a0' }}>Loading pools...</p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pools.map((pool) => (
-                  <PredictionPool key={pool.id} {...pool} onVote={handleVote} />
-                ))}
-              </div>
-              
-              {pools.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-lg" style={{ color: '#a0a0a0' }}>No Flow prediction pools yet.</p>
-                  <p style={{ color: '#a0a0a0' }}>Be the first to create one!</p>
-                </div>
-              )}
-            </>
-          )}
+          <AllPoolsList onVote={handleVote} />
         </div>
       </main>
     </div>
