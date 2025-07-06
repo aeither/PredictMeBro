@@ -11,7 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEscrowContract } from "@/hooks/useEscrowContract";
 import { useAccount } from "wagmi";
@@ -21,11 +28,25 @@ interface CreatePoolModalProps {
   onPoolCreated?: () => void;
 }
 
+// Time duration options
+const TIME_OPTIONS = [
+  { value: '300', label: '5 minutes', hours: 0.083 },
+  { value: '900', label: '15 minutes', hours: 0.25 },
+  { value: '1800', label: '30 minutes', hours: 0.5 },
+  { value: '3600', label: '1 hour', hours: 1 },
+  { value: '7200', label: '2 hours', hours: 2 },
+  { value: '14400', label: '4 hours', hours: 4 },
+  { value: '28800', label: '8 hours', hours: 8 },
+  { value: '86400', label: '1 day', hours: 24 },
+  { value: '172800', label: '2 days', hours: 48 },
+  { value: '604800', label: '1 week', hours: 168 },
+];
+
 const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [participationAmount, setParticipationAmount] = useState("");
-  const [durationHours, setDurationHours] = useState("1");
+  const [durationSeconds, setDurationSeconds] = useState("3600"); // Default to 1 hour
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createPool } = useEscrowContract();
@@ -36,17 +57,30 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
   const fillTestData = () => {
     setQuestion("Will Bitcoin reach $100,000 by end of 2024?");
     setParticipationAmount("0.01");
-    setDurationHours("2");
+    setDurationSeconds("7200"); // 2 hours
     toast({
       title: "Test Data Loaded",
       description: "Form filled with working test data. You can edit and submit.",
     });
   };
 
+  // Get the end time based on selected duration
+  const getEndTime = () => {
+    const now = Math.floor(Date.now() / 1000); // Current unix timestamp
+    const endTime = now + parseInt(durationSeconds);
+    return new Date(endTime * 1000).toLocaleString();
+  };
+
+  // Get duration in hours for the createPool function
+  const getDurationHours = () => {
+    const option = TIME_OPTIONS.find(opt => opt.value === durationSeconds);
+    return option ? option.hours : 1;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!question.trim() || !participationAmount || !durationHours.trim()) {
+    if (!question.trim() || !participationAmount || !durationSeconds) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields.",
@@ -74,25 +108,16 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
       return;
     }
 
-    const duration = parseFloat(durationHours);
-    if (duration <= 0) {
-      toast({
-        title: "Invalid Duration",
-        description: "Duration must be greater than 0 hours.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsCreating(true);
 
     try {
-      await createPool(question.trim(), amount, duration);
+      const durationHours = getDurationHours();
+      await createPool(question.trim(), amount, durationHours);
       
       // Reset form
       setQuestion("");
       setParticipationAmount("");
-      setDurationHours("1");
+      setDurationSeconds("3600");
       setOpen(false);
       
       toast({
@@ -127,17 +152,17 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-md border-slate-700">
+      <DialogContent className="sm:max-w-md glass-card border-slate-600/50 bg-slate-900/95 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Create Prediction Pool</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-white text-xl font-bold">Create Prediction Pool</DialogTitle>
+          <DialogDescription className="text-gray-300">
             Create a new prediction market for others to vote on. Creator will be your connected wallet address.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="question" className="text-white">
+            <Label htmlFor="question" className="text-white font-medium">
               Question
             </Label>
             <Textarea
@@ -145,13 +170,13 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
               placeholder="e.g., Will Armando become vegetarian by end of 2024?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 resize-none focus:border-purple-500 focus:ring-purple-500"
+              className="bg-slate-800/80 border-slate-600/50 text-white placeholder:text-gray-400 resize-none focus:border-purple-500 focus:ring-purple-500/50 backdrop-blur-sm"
               rows={3}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-white">
+            <Label htmlFor="amount" className="text-white font-medium">
               Participation Amount (ETH)
             </Label>
             <Input
@@ -162,31 +187,49 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
               step="0.001"
               value={participationAmount}
               onChange={(e) => setParticipationAmount(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500"
+              className="bg-slate-800/80 border-slate-600/50 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50 backdrop-blur-sm"
             />
             <p className="text-xs text-gray-400">This amount will be required to participate in the pool</p>
             {participationAmount && (
-              <p className="text-xs text-yellow-400">
-                Pool creation cost: {(parseFloat(participationAmount) * 10).toFixed(3)} ETH
-              </p>
+              <div className="p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg backdrop-blur-sm">
+                <p className="text-xs text-yellow-300 font-medium">
+                  Pool creation cost: {(parseFloat(participationAmount) * 10).toFixed(3)} ETH
+                </p>
+              </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-white">
-              Duration (Hours)
+            <Label htmlFor="duration" className="text-white font-medium flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>Pool Duration</span>
             </Label>
-            <Input
-              id="duration"
-              type="number"
-              placeholder="1"
-              min="0.1"
-              step="0.1"
-              value={durationHours}
-              onChange={(e) => setDurationHours(e.target.value)}
-              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500"
-            />
-            <p className="text-xs text-gray-400">How long the pool will be active</p>
+            <Select value={durationSeconds} onValueChange={setDurationSeconds}>
+              <SelectTrigger className="bg-slate-800/80 border-slate-600/50 text-white focus:border-purple-500 focus:ring-purple-500/50 backdrop-blur-sm">
+                <SelectValue placeholder="Select duration" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                {TIME_OPTIONS.map((option) => (
+                  <SelectItem 
+                    key={option.value} 
+                    value={option.value}
+                    className="text-white hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-400">How long the pool will be active</p>
+              {durationSeconds && (
+                <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg backdrop-blur-sm">
+                  <p className="text-xs text-blue-300 font-medium">
+                    Pool will end: {getEndTime()}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Test Data Button */}
@@ -195,27 +238,34 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
               type="button"
               onClick={fillTestData}
               disabled={isCreating}
-              className="w-full bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 text-yellow-400 hover:from-yellow-600/40 hover:to-orange-600/40 hover:text-yellow-300 backdrop-blur-sm"
+              className="w-full bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 text-yellow-300 hover:from-yellow-600/30 hover:to-orange-600/30 hover:text-yellow-200 backdrop-blur-sm transition-all duration-200"
             >
               📝 Fill Test Data
             </Button>
           </div>
           
-          <div className="flex space-x-2 pt-4">
+          <div className="flex space-x-3 pt-4">
             <Button
               type="button"
               onClick={() => setOpen(false)}
               disabled={isCreating}
-              className="flex-1 bg-gradient-to-r from-gray-700/30 to-gray-800/30 border border-gray-600/50 text-gray-300 hover:from-gray-600/50 hover:to-gray-700/50 hover:text-white backdrop-blur-sm"
+              className="flex-1 bg-slate-800/50 border border-slate-600/50 text-gray-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-sm transition-all duration-200"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isCreating}
-              className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:opacity-90 text-white disabled:opacity-50"
+              className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white disabled:opacity-50 transition-all duration-200 shadow-lg"
             >
-              {isCreating ? "Creating..." : "Create Pool"}
+              {isCreating ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 animate-spin border-2 border-white border-t-transparent rounded-full" />
+                  <span>Creating...</span>
+                </div>
+              ) : (
+                "Create Pool"
+              )}
             </Button>
           </div>
         </form>

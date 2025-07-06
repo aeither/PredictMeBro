@@ -3,7 +3,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Toaster } from 'sonner'
-import { WagmiProvider } from 'wagmi'
+import { WagmiProvider } from '@privy-io/wagmi'
 import { TantoProvider } from '@sky-mavis/tanto-widget'
 
 import { config } from './config/wagmi'
@@ -40,33 +40,33 @@ if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <WagmiProvider config={config}>
-        <TantoProvider 
-          theme="dark"
-          config={{
-            initialChainId: 2020, // Ronin Mainnet
-          }}
-        >
-          <PrivyProvider
-            appId={import.meta.env.VITE_PRIVY_APP_ID || 'your-privy-app-id'}
-            config={{
-              appearance: {
-                theme: 'dark',
-                accentColor: '#8b5cf6',
-                logo: '/logo.png',
-              },
-              embeddedWallets: {
-                createOnLogin: 'users-without-wallets',
-              },
-            }}
-          >
-            <TanStackQueryProvider.Provider>
+      <PrivyProvider
+        appId={import.meta.env.VITE_PRIVY_APP_ID || 'your-privy-app-id'}
+        config={{
+          appearance: {
+            theme: 'dark',
+            accentColor: '#8b5cf6',
+            logo: '/logo.png',
+          },
+          embeddedWallets: {
+            createOnLogin: 'users-without-wallets',
+          },
+        }}
+      >
+        <TanStackQueryProvider.Provider>
+          <WagmiProvider config={config}>
+            <TantoProvider 
+              theme="dark"
+              config={{
+                initialChainId: 2020, // Ronin Mainnet
+              }}
+            >
               <RouterProvider router={router} />
               <Toaster richColors position="top-right" />
-            </TanStackQueryProvider.Provider>
-          </PrivyProvider>
-        </TantoProvider>
-      </WagmiProvider>
+            </TantoProvider>
+          </WagmiProvider>
+        </TanStackQueryProvider.Provider>
+      </PrivyProvider>
     </StrictMode>,
   )
 }

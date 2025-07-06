@@ -49,32 +49,7 @@ function RoninPage() {
     });
   };
 
-  return (
-    <TantoConnectButton>
-      {({ address }) => (
-        <RoninPageContent 
-          pools={pools} 
-          setPools={setPools} 
-          handlePoolCreated={handlePoolCreated}
-          currentAddress={address}
-        />
-      )}
-    </TantoConnectButton>
-  );
-}
-
-function RoninPageContent({ 
-  pools, 
-  setPools, 
-  handlePoolCreated, 
-  currentAddress 
-}: {
-  pools: Pool[];
-  setPools: React.Dispatch<React.SetStateAction<Pool[]>>;
-  handlePoolCreated: () => void;
-  currentAddress?: string;
-}) {
-  const { broadcastVote } = useVoteNotifications(currentAddress);
+  const { broadcastVote } = useVoteNotifications();
 
   const handleVote = async (poolId: string, vote: "yes" | "no") => {
     setPools(prev => prev.map(pool => {
@@ -88,22 +63,6 @@ function RoninPageContent({
       }
       return pool;
     }));
-
-    // Broadcast the vote to other users
-    if (currentAddress) {
-      try {
-        await broadcastVote({
-          poolId: poolId,
-          vote: vote,
-          blockchain: 'ronin',
-          voter: currentAddress,
-          timestamp: new Date().toISOString(),
-          amount: pools.find(p => p.id === poolId)?.participationAmount || 0
-        });
-      } catch (broadcastError) {
-        console.warn('Failed to broadcast vote:', broadcastError);
-      }
-    }
 
     toast.success(`Vote submitted: ${vote.toUpperCase()} on Ronin`, {
       description: "Your vote has been recorded on Ronin blockchain!",
@@ -129,20 +88,58 @@ function RoninPageContent({
         {/* Pools Grid */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-6 text-white">Active Ronin Pools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pools.map((pool) => (
-              <PredictionPool key={pool.id} {...pool} onVote={handleVote} />
-            ))}
-          </div>
-          
-          {pools.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-lg text-gray-400">No Ronin prediction pools yet.</p>
-              <p className="text-gray-400">Be the first to create one!</p>
-            </div>
-          )}
+          <RoninPoolsList pools={pools} onVote={handleVote} />
         </div>
       </main>
+    </div>
+  );
+}
+
+// Component to match AllPoolsList structure
+function RoninPoolsList({ pools, onVote }: { pools: Pool[]; onVote: (poolId: string, vote: "yes" | "no") => void }) {
+  if (pools.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="mb-6">
+          <div className="text-6xl mb-4">🎯</div>
+          <h3 className="text-xl font-semibold text-white mb-2">No prediction pools yet</h3>
+          <p className="text-gray-300">Be the first to create one!</p>
+        </div>
+        <div className="mt-6 p-4 glass-card rounded-lg max-w-md mx-auto border border-gray-700/50">
+          <p className="text-xs font-semibold text-gray-300 mb-2">Debug Info:</p>
+          <div className="space-y-1 text-left">
+            <p className="text-xs text-gray-200">Total Pools: <span className="text-blue-300 font-medium">{pools.length}</span></p>
+            <p className="text-xs text-gray-200">Status: <span className="text-green-300 font-medium">Ready for new pools</span></p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-6">
+        <div className="bg-gray-800/40 border border-gray-700/50 rounded-lg px-3 py-2 backdrop-blur-sm">
+          <p className="text-sm text-gray-200 font-medium">
+            Showing <span className="text-white font-semibold">{pools.length}</span> active pools
+          </p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-gradient-to-r from-blue-600/30 to-green-600/30 border border-blue-500/30 text-blue-300 hover:from-blue-600/50 hover:to-green-600/50 hover:text-blue-200 rounded-lg text-sm backdrop-blur-sm transition-all duration-200 font-medium"
+        >
+          🔄 Refresh
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        {pools.map((pool) => (
+          <PredictionPool
+            key={pool.id}
+            {...pool}
+            onVote={(poolId, voteChoice) => onVote(poolId, voteChoice)}
+          />
+        ))}
+      </div>
     </div>
   );
 } 

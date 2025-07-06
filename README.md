@@ -4,7 +4,7 @@
   <img src="public/logo.png" alt="PredictMeBro Logo" width="200" height="200">
 </div>
 
-A decentralized sentiment prediction market platform where users can vote "Yes" or "No" on various predictions and market outcomes. Built with Next.js, Socket.IO for real-time updates, and Wagmi for Ethereum wallet integration.
+A decentralized sentiment prediction market platform where users can vote "Yes" or "No" on various predictions and market outcomes. Built with Vite + React, TanStack Router for routing, and Wagmi for Ethereum wallet integration.
 
 ## The Problem We Solve
 
@@ -43,11 +43,11 @@ A decentralized sentiment prediction market platform where users can vote "Yes" 
 ## Features
 
 - 🍞 **Sonner Toast**: Beautiful toast notifications with multiple variants
-- 🌐 **Socket.IO Integration**: Real-time toast notifications across multiple devices
+- 🔗 **TanStack Router**: File-based routing with full TypeScript support
 - 🏦 **Wagmi Integration**: Connect to Ethereum wallets and interact with blockchain
-- ⚡ **Next.js 15**: Latest Next.js with App Router
+- ⚡ **Vite + React**: Lightning-fast development with React 19
 - 🎨 **Tailwind CSS**: Utility-first CSS framework
-- 📝 **TypeScript**: Full type safety with Socket.IO event types
+- 📝 **TypeScript**: Full type safety throughout the application
 
 ## Getting Started
 
@@ -161,35 +161,37 @@ The app is wrapped with necessary providers in `src/app/providers.tsx`:
 ## Dependencies
 
 - `sonner`: Toast notifications
-- `socket.io` & `socket.io-client`: Real-time WebSocket communication
+- `@supabase/supabase-js`: Real-time database and authentication
+- `@tanstack/react-router`: File-based routing for React
 - `wagmi`: React hooks for Ethereum
 - `viem`: TypeScript interface for Ethereum
 - `@tanstack/react-query`: Async state management
-- `ts-node`: TypeScript execution for custom server
+- `tailwindcss`: Utility-first CSS framework
 
 ## Development
 
 To test the integration:
 
-1. **Toast Demo with Socket.IO**: 
-   - Click the toast buttons to see notifications
-   - Open the page in multiple tabs/devices to see real-time synchronization
-   - Watch the connection status and user count updates
+1. **Prediction Markets**: 
+   - Create and vote on prediction pools
+   - Watch real-time vote updates across multiple tabs
+   - Test different wallet connections and integrations
 
 2. **Wagmi Demo**: Connect your wallet (requires MetaMask or similar) to test Ethereum integration
 
-## TypeScript Socket.IO Integration
+## Real-time Features
 
-The app uses a custom TypeScript server (`server.ts`) that integrates Socket.IO with Next.js:
+The app uses Supabase for real-time data synchronization:
 
-- **Typed Events**: All Socket.IO events are fully typed using TypeScript interfaces
-- **Real-time Broadcasting**: Toast events are broadcast to all connected clients
-- **Connection Management**: Tracks and displays active user connections
-- **Type Safety**: Complete type safety for Socket.IO client and server events
+- **Real-time Updates**: Pool votes and predictions update in real-time
+- **Type Safety**: Complete type safety with TypeScript throughout
+- **Scalable Architecture**: Built on Supabase's real-time infrastructure
+- **Efficient Updates**: Only changed data is transmitted for optimal performance
 
 ## Learn More
 
 - [Sonner Documentation](https://sonner.emilkowal.ski/)
 - [Wagmi Documentation](https://wagmi.sh/)
-- [Next.js Documentation](https://nextjs.org/docs)
+- [Vite Documentation](https://vitejs.dev/)
+- [TanStack Router Documentation](https://tanstack.com/router)
 - [Viem Documentation](https://viem.sh/)
