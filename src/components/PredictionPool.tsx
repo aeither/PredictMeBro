@@ -147,10 +147,10 @@ const PredictionPool = ({
           </div>
 
           {/* Anonymous Voting Message */}
-          <div className="text-center p-4 rounded-lg bg-gray-800/40 border border-gray-700/30">
+          {/* <div className="text-center p-4 rounded-lg bg-gray-800/40 border border-gray-700/30">
             <div className="text-sm text-gray-300 font-medium">🔒 Anonymous Voting</div>
             <div className="text-xs text-gray-400 mt-1">Vote counts will be revealed after the pool ends</div>
-          </div>
+          </div> */}
 
           {/* Time Left */}
           <div className="text-center p-2 rounded-lg bg-gray-800/40 border border-gray-700/30">

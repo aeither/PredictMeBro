@@ -163,7 +163,7 @@ export const useEscrowContract = () => {
       totalAmount: Number(formatEther(poolData.poolBalance)),
       yesVotes: Number(voteCounts.yesVotes),
       noVotes: Number(voteCounts.noVotes),
-      endsAt: new Date(Number(poolData.endTime) * 1000).toISOString().split('T')[0],
+      endsAt: new Date(Number(poolData.endTime) * 1000).toISOString(),
       participationAmount: Number(formatEther(poolData.price)),
       creator: poolData.creator,
       walrusHash: poolData.walrusHash,
