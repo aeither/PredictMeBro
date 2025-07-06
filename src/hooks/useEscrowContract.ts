@@ -1,10 +1,11 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { parseEther, formatEther } from 'viem'
-import { ESCROW_CONTRACT_ADDRESS, ESCROW_CONTRACT_ABI } from '@/config/contract'
+import { getContractAddress, ESCROW_CONTRACT_ABI } from '@/config/contract'
 import { validatePoolData } from '@/utils/test-data'
 import { config } from '@/config/wagmi'
 import { useState, useEffect } from 'react'
+import { useLocation } from '@tanstack/react-router'
 
 export interface Pool {
   id: bigint
@@ -32,6 +33,7 @@ export interface ContractPool {
   noVotes: number
   endsAt: string
   participationAmount: number
+  claimableAmount?: number
   creator: string
   walrusHash: string
   isActive: boolean
@@ -41,10 +43,22 @@ export interface ContractPool {
 export const useEscrowContract = () => {
   const { address } = useAccount()
   const { writeContract } = useWriteContract()
+  const location = useLocation()
+
+  // Determine current network based on route
+  const getCurrentNetwork = (): 'flow' | 'ronin' => {
+    if (location.pathname.includes('/ronin')) {
+      return 'ronin'
+    }
+    return 'flow' // Default to flow
+  }
+
+  const currentNetwork = getCurrentNetwork()
+  const contractAddress = getContractAddress(currentNetwork)
 
   // Read total pools count
   const { data: totalPools, refetch: refetchTotalPools } = useReadContract({
-    address: ESCROW_CONTRACT_ADDRESS,
+    address: contractAddress as `0x${string}`,
     abi: ESCROW_CONTRACT_ABI,
     functionName: 'getTotalPools',
   })
@@ -93,10 +107,12 @@ export const useEscrowContract = () => {
       walrusHash,
       poolPrizeInWei: poolPrizeInWei.toString(),
       currentTime: Math.floor(Date.now() / 1000),
+      network: currentNetwork,
+      contractAddress,
     })
 
     return writeContract({
-      address: ESCROW_CONTRACT_ADDRESS,
+      address: contractAddress as `0x${string}`,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'createPool',
       args: [creatorName, priceInWei, startTime, endTime, walrusHash],
@@ -111,7 +127,7 @@ export const useEscrowContract = () => {
     const amount = parseEther(amountInEth.toString())
 
     return writeContract({
-      address: ESCROW_CONTRACT_ADDRESS,
+      address: contractAddress as `0x${string}`,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'vote',
       args: [poolId, voteYes],
@@ -119,10 +135,34 @@ export const useEscrowContract = () => {
     })
   }
 
+  // Claim reward from a pool
+  const claimReward = async (poolId: bigint) => {
+    if (!address) throw new Error('Wallet not connected')
+
+    return writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: ESCROW_CONTRACT_ABI,
+      functionName: 'claimReward',
+      args: [poolId],
+    })
+  }
+
+  // Resolve a pool with winning vote
+  const resolvePool = async (poolId: bigint, winningVote: boolean) => {
+    if (!address) throw new Error('Wallet not connected')
+
+    return writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: ESCROW_CONTRACT_ABI,
+      functionName: 'resolvePool',
+      args: [poolId, winningVote],
+    })
+  }
+
   // Get pool information
   const getPoolInfo = (poolId: bigint, participant?: string) => {
     return useReadContract({
-      address: ESCROW_CONTRACT_ADDRESS,
+      address: contractAddress as `0x${string}`,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'getPoolInfo',
       args: [poolId, (participant || address) as `0x${string}` || '0x0000000000000000000000000000000000000000'],
@@ -132,7 +172,7 @@ export const useEscrowContract = () => {
   // Get vote counts for a pool
   const getVoteCounts = (poolId: bigint) => {
     return useReadContract({
-      address: ESCROW_CONTRACT_ADDRESS,
+      address: contractAddress as `0x${string}`,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'getVoteCounts',
       args: [poolId],
@@ -142,7 +182,7 @@ export const useEscrowContract = () => {
   // Get pool walrus hash (question content)
   const getPoolWalrusHash = (poolId: bigint) => {
     return useReadContract({
-      address: ESCROW_CONTRACT_ADDRESS,
+      address: contractAddress as `0x${string}`,
       abi: ESCROW_CONTRACT_ABI,
       functionName: 'getPoolWalrusHash',
       args: [poolId],
@@ -153,18 +193,22 @@ export const useEscrowContract = () => {
   const convertPoolData = (
     poolData: any,
     _participantCount: bigint, // Unused but required by contract response
+    claimableAmount: bigint,
     voteCounts: { yesVotes: bigint; noVotes: bigint },
     walrusHash: string,
     poolId: string
   ): ContractPool => {
+    const networkPrefix = currentNetwork === 'ronin' ? 'ronin' : 'flow'
+    
     return {
-      id: `flow-${poolId}`,
+      id: `${networkPrefix}-${poolId}`,
       question: walrusHash, // Using walrus hash as question for now
       totalAmount: Number(formatEther(poolData.poolBalance)),
       yesVotes: Number(voteCounts.yesVotes),
       noVotes: Number(voteCounts.noVotes),
       endsAt: new Date(Number(poolData.endTime) * 1000).toISOString(),
       participationAmount: Number(formatEther(poolData.price)),
+      claimableAmount: Number(formatEther(claimableAmount)),
       creator: poolData.creator,
       walrusHash: poolData.walrusHash,
       isActive: poolData.isActive,
@@ -174,8 +218,12 @@ export const useEscrowContract = () => {
 
   return {
     totalPools: totalPools ? Number(totalPools) : 0,
+    currentNetwork,
+    contractAddress,
     createPool,
     vote,
+    claimReward,
+    resolvePool,
     getPoolInfo,
     getVoteCounts,
     getPoolWalrusHash,
@@ -187,7 +235,7 @@ export const useEscrowContract = () => {
 // Hook to fetch all pools data
 export const useAllPoolsData = () => {
   const { address } = useAccount()
-  const { totalPools, convertPoolData } = useEscrowContract()
+  const { totalPools, convertPoolData, contractAddress } = useEscrowContract()
   
   const [pools, setPools] = useState<ContractPool[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -216,32 +264,34 @@ export const useAllPoolsData = () => {
            // Fetch all data for this pool
            const [poolInfo, voteCounts, walrusHash] = await Promise.all([
              readContract(config, {
-               address: ESCROW_CONTRACT_ADDRESS,
+               address: contractAddress as `0x${string}`,
                abi: ESCROW_CONTRACT_ABI,
                functionName: 'getPoolInfo',
                args: [poolId, (address as `0x${string}`) || '0x0000000000000000000000000000000000000000'],
              }),
              readContract(config, {
-               address: ESCROW_CONTRACT_ADDRESS,
+               address: contractAddress as `0x${string}`,
                abi: ESCROW_CONTRACT_ABI,
                functionName: 'getVoteCounts',
                args: [poolId],
              }),
              readContract(config, {
-               address: ESCROW_CONTRACT_ADDRESS,
+               address: contractAddress as `0x${string}`,
                abi: ESCROW_CONTRACT_ABI,
                functionName: 'getPoolWalrusHash',
                args: [poolId],
              })
            ])
 
-          const [poolData, participantCount] = poolInfo as [any, bigint, bigint]
+          const [poolData, participantCount, claimableAmount, voted] = poolInfo as readonly [any, bigint, bigint, boolean]
           const [yesVotes, noVotes] = voteCounts as readonly [bigint, bigint]
           
           console.log(`Pool ${poolIndex} data:`, {
             isActive: poolData.isActive,
             creatorName: poolData.creatorName,
             participantCount: participantCount.toString(),
+            claimableAmount: claimableAmount.toString(),
+            voted: voted,
             yesVotes: yesVotes.toString(),
             noVotes: noVotes.toString(),
             walrusHash: walrusHash as string
@@ -250,6 +300,7 @@ export const useAllPoolsData = () => {
           const pool = convertPoolData(
             poolData,
             participantCount,
+            claimableAmount,
             { yesVotes, noVotes },
             walrusHash as string,
             poolIndex.toString()

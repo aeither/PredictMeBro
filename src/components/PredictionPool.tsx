@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Twitter } from "lucide-react";
+import { Twitter, Gift, CheckCircle, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatEth } from '@/lib/formatCurrency';
@@ -14,18 +14,26 @@ interface PredictionPoolProps {
   noVotes: number;
   endsAt: string;
   participationAmount: number;
+  claimableAmount?: number;
+  isResolved?: boolean;
   onVote?: (poolId: string, vote: "yes" | "no") => void;
+  onClaim?: (poolId: string) => void;
+  onResolve?: (poolId: string, winningVote: boolean) => void;
 }
 
 const PredictionPool = ({ 
   id,
   question, 
   totalAmount, 
-    yesVotes: _yesVotes, // Anonymous voting - not displayed
+  yesVotes: _yesVotes, // Anonymous voting - not displayed
   noVotes: _noVotes, // Anonymous voting - not displayed 
   endsAt, 
   participationAmount,
-  onVote 
+  claimableAmount = 0,
+  isResolved,
+  onVote,
+  onClaim,
+  onResolve
 }: PredictionPoolProps) => {
   // const totalVotes = yesVotes + noVotes; // Anonymous voting - not showing vote counts
   const [timeLeft, setTimeLeft] = useState('');
@@ -56,6 +64,18 @@ const PredictionPool = ({
   const handleVote = (vote: "yes" | "no") => {
     if (onVote) {
       onVote(id, vote);
+    }
+  };
+
+  const handleClaim = () => {
+    if (onClaim) {
+      onClaim(id);
+    }
+  };
+
+  const handleResolve = (winningVote: boolean) => {
+    if (onResolve) {
+      onResolve(id, winningVote);
     }
   };
 
@@ -146,11 +166,13 @@ const PredictionPool = ({
             </div>
           </div>
 
-          {/* Anonymous Voting Message */}
-          {/* <div className="text-center p-4 rounded-lg bg-gray-800/40 border border-gray-700/30">
-            <div className="text-sm text-gray-300 font-medium">🔒 Anonymous Voting</div>
-            <div className="text-xs text-gray-400 mt-1">Vote counts will be revealed after the pool ends</div>
-          </div> */}
+          {/* Claimable Amount Display */}
+          {claimableAmount > 0 && (
+            <div className="text-center p-3 rounded-lg bg-yellow-900/20 border border-yellow-700/30">
+              <div className="text-xl font-bold text-yellow-300">{formatEth(claimableAmount)}</div>
+              <div className="text-xs text-yellow-200/80 font-medium">Available to Claim</div>
+            </div>
+          )}
 
           {/* Time Left */}
           <div className="text-center p-2 rounded-lg bg-gray-800/40 border border-gray-700/30">
@@ -164,20 +186,58 @@ const PredictionPool = ({
 
         {/* Action Buttons */}
         <div className="flex space-x-3 pt-4">
-          <Button
-            onClick={() => handleVote('yes')}
-            disabled={timeLeft === 'Ended'}
-            className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2.5 rounded-lg border border-green-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            👍 Vote Yes
-          </Button>
-          <Button
-            onClick={() => handleVote('no')}
-            disabled={timeLeft === 'Ended'}
-            className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-2.5 rounded-lg border border-red-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-          >
-            👎 Vote No
-          </Button>
+          {claimableAmount > 0 ? (
+            // Show Claim button when claimableAmount > 0
+            <Button
+              onClick={handleClaim}
+              className="flex-1 bg-gradient-to-r from-yellow-600 to-orange-500 hover:from-yellow-700 hover:to-orange-600 text-white font-semibold py-2.5 rounded-lg border border-yellow-500/30 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <Gift className="w-4 h-4" />
+              Claim Reward
+            </Button>
+          ) : timeLeft === 'Ended' && !isResolved ? (
+            // Show Resolve buttons when pool ended but not resolved
+            <>
+              <Button
+                onClick={() => handleResolve(true)}
+                className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2.5 rounded-lg border border-green-500/30 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Resolve Yes
+              </Button>
+              <Button
+                onClick={() => handleResolve(false)}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-2.5 rounded-lg border border-red-500/30 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Resolve No
+              </Button>
+            </>
+          ) : timeLeft === 'Ended' && isResolved ? (
+            // Show resolved status when pool is resolved
+            <div className="flex-1 bg-gradient-to-r from-gray-600 to-gray-500 text-white font-semibold py-2.5 rounded-lg border border-gray-500/30 shadow-lg flex items-center justify-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Pool Resolved
+            </div>
+          ) : (
+            // Show Yes/No buttons when pool is active
+            <>
+              <Button
+                onClick={() => handleVote('yes')}
+                disabled={timeLeft === 'Ended'}
+                className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2.5 rounded-lg border border-green-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                👍 Vote Yes
+              </Button>
+              <Button
+                onClick={() => handleVote('no')}
+                disabled={timeLeft === 'Ended'}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-2.5 rounded-lg border border-red-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                👎 Vote No
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

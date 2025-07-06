@@ -2,12 +2,16 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, Users, Zap, Shield } from 'lucide-react'
+import { usePoolNotifications } from '@/hooks/usePoolNotifications'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
 function HomePage() {
+  // Enable realtime pool creation notifications
+  usePoolNotifications();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       {/* Hero Section */}

@@ -4,6 +4,7 @@ import AllPoolsList from "@/components/AllPoolsList";
 import { toast } from "sonner";
 import { useEscrowContract } from "@/hooks/useEscrowContract";
 import { useVoteNotifications } from "@/hooks/useVoteNotifications";
+import { usePoolNotifications } from "@/hooks/usePoolNotifications";
 import { useAccount } from 'wagmi';
 
 export const Route = createFileRoute('/flow')({
@@ -11,9 +12,10 @@ export const Route = createFileRoute('/flow')({
 })
 
 function FlowPage() {
-  const { vote } = useEscrowContract();
+  const { vote, resolvePool, claimReward } = useEscrowContract();
   const { address } = useAccount();
   const { broadcastVote } = useVoteNotifications(address);
+  const { isListening } = usePoolNotifications();
 
   const handlePoolCreated = () => {
     // Pools will be automatically refetched by the AllPoolsList component
@@ -57,6 +59,44 @@ function FlowPage() {
     }
   };
 
+  const handleResolve = async (poolId: string, winningVote: boolean) => {
+    try {
+      // Extract the numeric ID from the poolId (remove "flow-" prefix)
+      const numericId = BigInt(poolId.replace('flow-', ''));
+      
+      await resolvePool(numericId, winningVote);
+      
+      toast.success(`Pool resolved: ${winningVote ? "YES" : "NO"} wins!`, {
+        description: "The pool has been resolved on Flow blockchain.",
+      });
+
+    } catch (error) {
+      console.error('Error resolving pool:', error);
+      toast.error("Failed to resolve pool", {
+        description: "Could not resolve the pool. Please try again."
+      });
+    }
+  };
+
+  const handleClaim = async (poolId: string) => {
+    try {
+      // Extract the numeric ID from the poolId (remove "flow-" prefix)
+      const numericId = BigInt(poolId.replace('flow-', ''));
+      
+      await claimReward(numericId);
+      
+      toast.success("Reward claimed successfully!", {
+        description: "Your reward has been claimed from Flow blockchain.",
+      });
+
+    } catch (error) {
+      console.error('Error claiming reward:', error);
+      toast.error("Failed to claim reward", {
+        description: "Could not claim your reward. Please try again."
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <main className="container mx-auto px-4 py-8">
@@ -76,7 +116,7 @@ function FlowPage() {
         {/* Pools Grid */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-6 text-white">All Flow Pools</h2>
-          <AllPoolsList onVote={handleVote} />
+          <AllPoolsList onVote={handleVote} onResolve={handleResolve} onClaim={handleClaim} />
         </div>
       </main>
     </div>

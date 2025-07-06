@@ -4,9 +4,11 @@ import { useEscrowContract, useAllPoolsData } from '@/hooks/useEscrowContract'
 
 interface AllPoolsListProps {
   onVote: (poolId: string, voteChoice: "yes" | "no", participationAmount: number) => void
+  onResolve?: (poolId: string, winningVote: boolean) => void
+  onClaim?: (poolId: string) => void
 }
 
-const AllPoolsList = ({ onVote }: AllPoolsListProps) => {
+const AllPoolsList = ({ onVote, onResolve, onClaim }: AllPoolsListProps) => {
   const { address } = useAccount()
   const { totalPools } = useEscrowContract()
   const { pools, isLoading, error } = useAllPoolsData()
@@ -74,6 +76,8 @@ const AllPoolsList = ({ onVote }: AllPoolsListProps) => {
             key={pool.id}
             {...pool}
             onVote={(poolId, voteChoice) => onVote(poolId, voteChoice, pool.participationAmount)}
+            onResolve={(poolId, winningVote) => onResolve?.(poolId, winningVote)}
+            onClaim={(poolId) => onClaim?.(poolId)}
           />
         ))}
       </div>

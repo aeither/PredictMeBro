@@ -3,6 +3,9 @@ import { useState } from "react";
 import PredictionPool from "@/components/PredictionPool";
 import CreatePoolModal from "@/components/CreatePoolModal";
 import { toast } from "sonner";
+import { useEscrowContract } from "@/hooks/useEscrowContract";
+import { usePoolNotifications } from "@/hooks/usePoolNotifications";
+import { useAccount } from 'wagmi';
 
 interface Pool {
   id: string;
@@ -19,6 +22,9 @@ export const Route = createFileRoute('/ronin')({
 })
 
 function RoninPage() {
+  const { vote, resolvePool, claimReward } = useEscrowContract();
+  const { address } = useAccount();
+  const { isListening } = usePoolNotifications();
   const [pools, setPools] = useState<Pool[]>([
     {
       id: "ronin-1",
@@ -41,28 +47,67 @@ function RoninPage() {
   ]);
 
   const handlePoolCreated = () => {
-    // Refresh the page or update pools state
+    // Pools will be automatically refetched by the AllPoolsList component
     toast.success("Pool created successfully!", {
       description: "Your prediction pool is now active on Ronin blockchain.",
     });
   };
 
-  const handleVote = async (poolId: string, vote: "yes" | "no") => {
-    setPools(prev => prev.map(pool => {
-      if (pool.id === poolId) {
-        return {
-          ...pool,
-          yesVotes: vote === "yes" ? pool.yesVotes + 1 : pool.yesVotes,
-          noVotes: vote === "no" ? pool.noVotes + 1 : pool.noVotes,
-          totalAmount: pool.totalAmount + pool.participationAmount,
-        };
-      }
-      return pool;
-    }));
+  const handleVote = async (poolId: string, voteChoice: "yes" | "no", participationAmount: number) => {
+    try {
+      // Extract the numeric ID from the poolId (remove "ronin-" prefix)
+      const numericId = BigInt(poolId.replace('ronin-', ''));
+      
+      await vote(numericId, voteChoice === "yes", participationAmount);
+      
+      toast.success(`Vote submitted: ${voteChoice.toUpperCase()} on Ronin`, {
+        description: "Your vote has been recorded on Ronin blockchain!",
+      });
 
-    toast.success(`Vote submitted: ${vote.toUpperCase()} on Ronin`, {
-      description: "Your vote has been recorded on Ronin blockchain!",
-    });
+    } catch (error) {
+      console.error('Error voting:', error);
+      toast.error("Failed to vote", {
+        description: "Could not submit your vote. Please try again."
+      });
+    }
+  };
+
+  const handleResolve = async (poolId: string, winningVote: boolean) => {
+    try {
+      // Extract the numeric ID from the poolId (remove "ronin-" prefix)
+      const numericId = BigInt(poolId.replace('ronin-', ''));
+      
+      await resolvePool(numericId, winningVote);
+      
+      toast.success(`Pool resolved: ${winningVote ? "YES" : "NO"} wins!`, {
+        description: "The pool has been resolved on Ronin blockchain.",
+      });
+
+    } catch (error) {
+      console.error('Error resolving pool:', error);
+      toast.error("Failed to resolve pool", {
+        description: "Could not resolve the pool. Please try again."
+      });
+    }
+  };
+
+  const handleClaim = async (poolId: string) => {
+    try {
+      // Extract the numeric ID from the poolId (remove "ronin-" prefix)
+      const numericId = BigInt(poolId.replace('ronin-', ''));
+      
+      await claimReward(numericId);
+      
+      toast.success("Reward claimed successfully!", {
+        description: "Your reward has been claimed from Ronin blockchain.",
+      });
+
+    } catch (error) {
+      console.error('Error claiming reward:', error);
+      toast.error("Failed to claim reward", {
+        description: "Could not claim your reward. Please try again."
+      });
+    }
   };
 
   return (
@@ -84,7 +129,7 @@ function RoninPage() {
         {/* Pools Grid */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-6 text-white">Active Ronin Pools</h2>
-          <RoninPoolsList pools={pools} onVote={handleVote} />
+          <RoninPoolsList pools={pools} onVote={handleVote} onResolve={handleResolve} onClaim={handleClaim} />
         </div>
       </main>
     </div>
@@ -92,7 +137,7 @@ function RoninPage() {
 }
 
 // Component to match AllPoolsList structure
-function RoninPoolsList({ pools, onVote }: { pools: Pool[]; onVote: (poolId: string, vote: "yes" | "no") => void }) {
+function RoninPoolsList({ pools, onVote, onResolve, onClaim }: { pools: Pool[]; onVote: (poolId: string, vote: "yes" | "no", participationAmount: number) => void; onResolve: (poolId: string, winningVote: boolean) => void; onClaim: (poolId: string) => void }) {
   if (pools.length === 0) {
     return (
       <div className="text-center py-12">
@@ -132,7 +177,9 @@ function RoninPoolsList({ pools, onVote }: { pools: Pool[]; onVote: (poolId: str
           <PredictionPool
             key={pool.id}
             {...pool}
-            onVote={(poolId, voteChoice) => onVote(poolId, voteChoice)}
+            onVote={(poolId, voteChoice) => onVote(poolId, voteChoice, pool.participationAmount)}
+            onResolve={(poolId, winningVote) => onResolve(poolId, winningVote)}
+            onClaim={() => onClaim(pool.id)}
           />
         ))}
       </div>

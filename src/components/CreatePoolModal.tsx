@@ -21,8 +21,10 @@ import {
 import { Plus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEscrowContract } from "@/hooks/useEscrowContract";
+import { useBroadcastPoolCreation } from "@/hooks/usePoolNotifications";
 import { useAccount } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
+import { useLocation } from '@tanstack/react-router';
 
 interface CreatePoolModalProps {
   onPoolCreated?: () => void;
@@ -52,6 +54,8 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
   const { createPool } = useEscrowContract();
   const { address } = useAccount();
   const { authenticated } = usePrivy();
+  const { broadcastPoolCreation } = useBroadcastPoolCreation();
+  const location = useLocation();
 
   // Function to fill form with working test data
   const fillTestData = () => {
@@ -128,6 +132,15 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
       if (onPoolCreated) {
         onPoolCreated();
       }
+
+      // Broadcast pool creation event for realtime notifications
+      const blockchain = location.pathname.includes('/flow') ? 'flow' : 'ronin';
+      await broadcastPoolCreation({
+        question: question.trim(),
+        blockchain,
+        totalAmount: amount,
+        creatorAddress: address || '',
+      });
     } catch (error) {
       console.error('Error creating pool:', error);
       toast({
