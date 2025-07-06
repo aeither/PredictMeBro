@@ -1,7 +1,7 @@
 import { useReadContract, useWriteContract, useAccount } from 'wagmi'
 import { readContract } from 'wagmi/actions'
 import { parseEther, formatEther } from 'viem'
-import { getContractAddress, ESCROW_CONTRACT_ABI } from '@/config/contract'
+import { getContractAddress, ESCROW_CONTRACT_ABI, isMainnetEnvironment } from '@/config/contract'
 import { validatePoolData } from '@/utils/test-data'
 import { config } from '@/config/wagmi'
 import { useState, useEffect } from 'react'
@@ -54,13 +54,24 @@ export const useEscrowContract = () => {
   }
 
   const currentNetwork = getCurrentNetwork()
-  const contractAddress = getContractAddress(currentNetwork)
+  const isMainnet = isMainnetEnvironment()
+  const contractAddress = getContractAddress(currentNetwork, isMainnet)
+  
+  console.log('useEscrowContract initialized:', {
+    currentNetwork,
+    isMainnet,
+    contractAddress,
+    pathname: location.pathname
+  })
 
   // Read total pools count
   const { data: totalPools, refetch: refetchTotalPools } = useReadContract({
     address: contractAddress as `0x${string}`,
     abi: ESCROW_CONTRACT_ABI,
     functionName: 'getTotalPools',
+    query: {
+      enabled: !!contractAddress,
+    },
   })
 
   // Create a new pool
@@ -220,6 +231,7 @@ export const useEscrowContract = () => {
     totalPools: totalPools ? Number(totalPools) : 0,
     currentNetwork,
     contractAddress,
+    isMainnet,
     createPool,
     vote,
     claimReward,
@@ -249,7 +261,7 @@ export const useAllPoolsData = () => {
 
     setIsLoading(true)
     setError(null)
-    console.log(`Fetching ${totalPools} pools...`)
+    console.log(`Fetching ${totalPools} pools from contract: ${contractAddress}...`)
 
     try {
       // Fetch all pools in parallel (newest first)
@@ -326,14 +338,20 @@ export const useAllPoolsData = () => {
     }
   }
 
-  // Fetch when totalPools changes
+  // Fetch when totalPools changes or contract address changes
   useEffect(() => {
+    console.log('useAllPoolsData effect triggered:', {
+      totalPools,
+      contractAddress,
+      address
+    })
+    
     if (totalPools > 0) {
       fetchPoolsData()
     } else {
       setPools([])
     }
-  }, [totalPools, address])
+  }, [totalPools, address, contractAddress])
 
   return {
     pools,

@@ -10,8 +10,8 @@ interface AllPoolsListProps {
 
 const AllPoolsList = ({ onVote, onResolve, onClaim }: AllPoolsListProps) => {
   const { address } = useAccount()
-  const { totalPools } = useEscrowContract()
-  const { pools, isLoading, error } = useAllPoolsData()
+  const { totalPools, refetchTotalPools } = useEscrowContract()
+  const { pools, isLoading, error, refetch } = useAllPoolsData()
 
   if (error) {
     return <ErrorDisplay error={error} />
@@ -64,10 +64,13 @@ const AllPoolsList = ({ onVote, onResolve, onClaim }: AllPoolsListProps) => {
           </p>
         </div>
         <button
-          onClick={() => window.location.reload()}
+          onClick={async () => {
+            await refetchTotalPools()
+            await refetch()
+          }}
           className="px-4 py-2 bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-500/30 text-blue-300 hover:from-blue-600/50 hover:to-purple-600/50 hover:text-blue-200 rounded-lg text-sm backdrop-blur-sm transition-all duration-200 font-medium"
         >
-          🔄 Refresh
+          🔄 Refresh Data
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
