@@ -142,14 +142,14 @@ function FlowPage() {
             </div>
             
             {/* Debug Info */}
-            <div className="mb-6 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 text-xs">
+            {/* <div className="mb-6 p-3 bg-gray-800/30 rounded-lg border border-gray-700/50 text-xs">
               <div className="text-gray-300">
                 <strong>Debug Info:</strong> Network: {import.meta.env.VITE_NETWORK_ENV || 'default (testnet)'}
               </div>
               <div className="text-gray-400 mt-1">
                 Check console for contract address details
               </div>
-            </div>
+            </div> */}
             
             <CreatePoolModal onPoolCreated={handlePoolCreated} />
           </div>

@@ -180,7 +180,7 @@ const CreatePoolModal = ({ onPoolCreated }: CreatePoolModalProps) => {
             </Label>
             <Textarea
               id="question"
-              placeholder="e.g., Will Armando become vegetarian by end of 2024?"
+              placeholder="e.g., How many IRL ethglobal events will be happening in 2026?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               className="bg-slate-800/80 border-slate-600/50 text-white placeholder:text-gray-400 resize-none focus:border-purple-500 focus:ring-purple-500/50 backdrop-blur-sm"

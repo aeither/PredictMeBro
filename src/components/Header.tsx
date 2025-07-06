@@ -52,21 +52,21 @@ const Header = () => {
               to="/flow" 
               className={`transition-colors ${location.pathname === "/flow" ? "text-purple-400" : "text-gray-300 hover:text-white"}`}
             >
-              Flow Markets
+              Market 1
             </Link>
             <Link 
               to="/ronin" 
               className={`transition-colors ${location.pathname === "/ronin" ? "text-blue-400" : "text-gray-300 hover:text-white"}`}
             >
-              Ronin Markets
+              Market 2
             </Link>
-
+{/* 
             <Link 
               to="/supabase-demo" 
               className={`transition-colors ${location.pathname === "/supabase-demo" ? "text-green-400" : "text-gray-300 hover:text-white"}`}
             >
               Realtime Demo
-            </Link>
+            </Link> */}
           </nav>
           
           {renderConnectButton()}
