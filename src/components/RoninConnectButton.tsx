@@ -4,7 +4,7 @@ import { toast } from "sonner";
 export function RoninConnectButton() {
   return (
     <TantoConnectButton>
-      {({ isConnected, showModal, address, chainId }) => {
+      {({ isConnected, showModal, address }) => {
         if (isConnected && address) {
           return (
             <div className="flex items-center space-x-2 cursor-pointer">

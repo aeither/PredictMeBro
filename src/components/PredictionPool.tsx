@@ -21,13 +21,13 @@ const PredictionPool = ({
   id,
   question, 
   totalAmount, 
-  yesVotes, 
-  noVotes, 
+    yesVotes: _yesVotes, // Anonymous voting - not displayed
+  noVotes: _noVotes, // Anonymous voting - not displayed 
   endsAt, 
   participationAmount,
   onVote 
 }: PredictionPoolProps) => {
-  const totalVotes = yesVotes + noVotes;
+  // const totalVotes = yesVotes + noVotes; // Anonymous voting - not showing vote counts
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {

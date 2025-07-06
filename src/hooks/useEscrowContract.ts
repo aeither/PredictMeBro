@@ -152,7 +152,7 @@ export const useEscrowContract = () => {
   // Convert contract pool data to UI format
   const convertPoolData = (
     poolData: any,
-    participantCount: bigint,
+    _participantCount: bigint, // Unused but required by contract response
     voteCounts: { yesVotes: bigint; noVotes: bigint },
     walrusHash: string,
     poolId: string
@@ -204,9 +204,7 @@ export const useAllPoolsData = () => {
     console.log(`Fetching ${totalPools} pools...`)
 
     try {
-      const poolsData: ContractPool[] = []
-      
-             // Fetch all pools in parallel (newest first)
+      // Fetch all pools in parallel (newest first)
        const poolPromises = Array.from({ length: totalPools }, async (_, i) => {
          // Reverse the order so newest pools (highest index) come first
          const poolIndex = totalPools - 1 - i

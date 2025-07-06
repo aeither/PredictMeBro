@@ -1,8 +1,6 @@
-import React from 'react'
 import { useAccount } from 'wagmi'
 import PredictionPool from './PredictionPool'
-import { useEscrowContract, useAllPoolsData, type ContractPool } from '@/hooks/useEscrowContract'
-import { toast } from 'sonner'
+import { useEscrowContract, useAllPoolsData } from '@/hooks/useEscrowContract'
 
 interface AllPoolsListProps {
   onVote: (poolId: string, voteChoice: "yes" | "no", participationAmount: number) => void
