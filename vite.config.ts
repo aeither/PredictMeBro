@@ -1,20 +1,47 @@
 import { defineConfig } from 'vite'
-import viteReact from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import { resolve } from 'node:path'
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    tanstackRouter({ autoCodeSplitting: true, target: "react" }),
-    viteReact(),
+    TanStackRouterVite(),
+    react(),
     tailwindcss(),
   ],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, './src'),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['@tanstack/react-router'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-select', 'lucide-react'],
+          'crypto-vendor': ['wagmi', 'viem', '@privy-io/react-auth', '@privy-io/wagmi'],
+          'blockchain-vendor': ['@sky-mavis/tanto-widget'],
+          'query-vendor': ['@tanstack/react-query'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@tanstack/react-router',
+      'wagmi',
+      'viem',
+      '@privy-io/react-auth',
+      '@privy-io/wagmi',
+    ],
   },
 })

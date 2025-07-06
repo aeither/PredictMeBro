@@ -18,9 +18,12 @@ function HomePage() {
             <h1 className="text-4xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               PredictMeBro
             </h1>
-            <p className="text-xl sm:text-2xl mb-8 text-gray-300 max-w-3xl mx-auto">
-              The future of decentralized prediction markets. 
-              Create, participate, and earn from your predictions on Flow and Ronin blockchains.
+            <p className="text-xl sm:text-2xl mb-4 text-gray-300 max-w-4xl mx-auto">
+              A decentralized, real-time sentiment prediction market made for everyone.
+            </p>
+            <p className="text-lg mb-8 text-gray-400 max-w-3xl mx-auto">
+              Most prediction markets are complex and not built for everyday users. 
+              We offer a simple Yes/No voting interface that anyone can use with real-time updates.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/flow">
@@ -40,7 +43,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Problem & Solution Section */}
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -53,12 +56,24 @@ function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="glass-card border-0">
               <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-white">Simple & Accessible</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Easy Yes/No voting interface designed for everyone - no complex trading required
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="glass-card border-0">
+              <CardHeader>
                 <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
                   <Shield className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Decentralized</CardTitle>
+                <CardTitle className="text-white">Fully Decentralized</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Fully decentralized prediction markets powered by smart contracts
+                  Transparent, trustless prediction markets powered by smart contracts
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -66,9 +81,9 @@ function HomePage() {
             <Card className="glass-card border-0">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-success rounded-lg flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-white" />
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Multi-Chain</CardTitle>
+                <CardTitle className="text-white">Multi-Chain Support</CardTitle>
                 <CardDescription className="text-gray-400">
                   Support for Flow and Ronin blockchains with seamless wallet integration
                 </CardDescription>
@@ -78,11 +93,35 @@ function HomePage() {
             <Card className="glass-card border-0">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center mb-4">
-                  <TrendingUp className="h-6 w-6 text-white" />
+                  <Zap className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Real-Time</CardTitle>
+                <CardTitle className="text-white">Real-Time Updates</CardTitle>
                 <CardDescription className="text-gray-400">
                   Live updates and real-time voting with instant blockchain confirmation
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="glass-card border-0">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-4">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-white">Join & Get Rewarded</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Join markets, share your predictions, and earn rewards for accurate forecasts
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="glass-card border-0">
+              <CardHeader>
+                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <CardTitle className="text-white">Built for Everyone</CardTitle>
+                <CardDescription className="text-gray-400">
+                  No trading experience needed - if you can vote, you can predict and earn
                 </CardDescription>
               </CardHeader>
             </Card>

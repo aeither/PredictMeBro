@@ -3,8 +3,6 @@ import { useState } from "react";
 import PredictionPool from "@/components/PredictionPool";
 import CreatePoolModal from "@/components/CreatePoolModal";
 import { toast } from "sonner";
-import { useVoteNotifications } from "@/hooks/useVoteNotifications";
-import { TantoConnectButton } from '@sky-mavis/tanto-widget';
 
 interface Pool {
   id: string;
@@ -48,8 +46,6 @@ function RoninPage() {
       description: "Your prediction pool is now active on Ronin blockchain.",
     });
   };
-
-  const { broadcastVote } = useVoteNotifications();
 
   const handleVote = async (poolId: string, vote: "yes" | "no") => {
     setPools(prev => prev.map(pool => {
