@@ -158,9 +158,9 @@ function SupabaseDemo() {
 
         {/* Main Demo Area */}
         <div className="max-w-2xl mx-auto">
-          <div className="bg-gray-800 rounded-2xl p-8 mb-8 border border-gray-700">
-            <h2 className="text-2xl font-bold mb-4 text-center">Send Messages</h2>
-            <p className="text-gray-400 mb-6 text-center">
+          <div className="glass-card rounded-3xl p-8 mb-8 shadow-glow">
+            <h2 className="text-2xl font-bold mb-4 text-center text-white">Send Messages</h2>
+            <p className="text-gray-300 mb-6 text-center">
               Open this page in multiple browser windows and click the buttons to see real-time messaging in action!
             </p>
             
@@ -197,8 +197,8 @@ function SupabaseDemo() {
           </div>
 
           {/* Instructions */}
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold mb-3">🧪 How to Test</h3>
+          <div className="glass-card rounded-3xl p-6">
+            <h3 className="text-lg font-semibold mb-3 text-white">🧪 How to Test</h3>
             <ol className="text-gray-300 space-y-2 text-sm">
               <li><strong>1.</strong> Open this page in multiple browser windows/tabs</li>
               <li><strong>2.</strong> Click "Send Hello Message" in one window</li>

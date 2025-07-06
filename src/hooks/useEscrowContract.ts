@@ -206,12 +206,14 @@ export const useAllPoolsData = () => {
     try {
       const poolsData: ContractPool[] = []
       
-             // Fetch all pools in parallel
+             // Fetch all pools in parallel (newest first)
        const poolPromises = Array.from({ length: totalPools }, async (_, i) => {
+         // Reverse the order so newest pools (highest index) come first
+         const poolIndex = totalPools - 1 - i
          try {
-           const poolId = BigInt(i)
+           const poolId = BigInt(poolIndex)
            
-           console.log(`Fetching pool ${i} data...`)
+           console.log(`Fetching pool ${poolIndex} data...`)
            
            // Fetch all data for this pool
            const [poolInfo, voteCounts, walrusHash] = await Promise.all([
@@ -238,7 +240,7 @@ export const useAllPoolsData = () => {
           const [poolData, participantCount] = poolInfo as [any, bigint, bigint]
           const [yesVotes, noVotes] = voteCounts as readonly [bigint, bigint]
           
-          console.log(`Pool ${i} data:`, {
+          console.log(`Pool ${poolIndex} data:`, {
             isActive: poolData.isActive,
             creatorName: poolData.creatorName,
             participantCount: participantCount.toString(),
@@ -252,12 +254,12 @@ export const useAllPoolsData = () => {
             participantCount,
             { yesVotes, noVotes },
             walrusHash as string,
-            i.toString()
+            poolIndex.toString()
           )
 
           return pool
         } catch (error) {
-          console.error(`Error fetching pool ${i}:`, error)
+          console.error(`Error fetching pool ${poolIndex}:`, error)
           return null
         }
       })

@@ -3,6 +3,8 @@ import CreatePoolModal from "@/components/CreatePoolModal";
 import AllPoolsList from "@/components/AllPoolsList";
 import { toast } from "sonner";
 import { useEscrowContract } from "@/hooks/useEscrowContract";
+import { useVoteNotifications } from "@/hooks/useVoteNotifications";
+import { useAccount } from 'wagmi';
 
 export const Route = createFileRoute('/flow')({
   component: FlowPage,
@@ -10,6 +12,8 @@ export const Route = createFileRoute('/flow')({
 
 function FlowPage() {
   const { vote } = useEscrowContract();
+  const { address } = useAccount();
+  const { broadcastVote } = useVoteNotifications(address);
 
   const handlePoolCreated = () => {
     // Pools will be automatically refetched by the AllPoolsList component
@@ -24,6 +28,22 @@ function FlowPage() {
       const numericId = BigInt(poolId.replace('flow-', ''));
       
       await vote(numericId, voteChoice === "yes", participationAmount);
+      
+      // Broadcast the vote to other users
+      if (address) {
+        try {
+          await broadcastVote({
+            poolId: poolId,
+            vote: voteChoice,
+            blockchain: 'flow',
+            voter: address,
+            timestamp: new Date().toISOString(),
+            amount: participationAmount
+          });
+        } catch (broadcastError) {
+          console.warn('Failed to broadcast vote:', broadcastError);
+        }
+      }
       
       toast.success(`Vote submitted: ${voteChoice.toUpperCase()} on Flow`, {
         description: "Your vote has been recorded on Flow blockchain!",
@@ -42,14 +62,11 @@ function FlowPage() {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="bg-gradient-hero rounded-2xl p-8 mb-8" style={{ 
-            background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(30, 144, 255, 0.1))',
-            border: '1px solid rgba(138, 43, 226, 0.2)'
-          }}>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: '#ededed' }}>
+          <div className="glass-card rounded-3xl p-8 mb-8 shadow-glow">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
               Flow Prediction Markets
             </h1>
-            <p className="text-xl mb-8 max-w-2xl mx-auto" style={{ color: '#a0a0a0' }}>
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-300">
               Create and participate in prediction markets on Flow blockchain. Connect with Privy.
             </p>
             <CreatePoolModal onPoolCreated={handlePoolCreated} />
@@ -58,7 +75,7 @@ function FlowPage() {
 
         {/* Pools Grid */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6" style={{ color: '#ededed' }}>All Flow Pools</h2>
+          <h2 className="text-3xl font-bold mb-6 text-white">All Flow Pools</h2>
           <AllPoolsList onVote={handleVote} />
         </div>
       </main>

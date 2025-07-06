@@ -4,17 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Twitter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { useAccount } from 'wagmi';
-import { supabase, insertVoteEvent, subscribeToVotes } from '@/config/supabase';
-
-// Define vote event types
-interface VoteEventData {
-  poolId: string;
-  vote: "yes" | "no";
-  walletAddress?: string;
-  blockchain: string;
-}
+import { formatEth } from '@/lib/formatCurrency';
 
 interface PredictionPoolProps {
   id: string;
@@ -39,80 +29,6 @@ const PredictionPool = ({
 }: PredictionPoolProps) => {
   const totalVotes = yesVotes + noVotes;
   const [timeLeft, setTimeLeft] = useState('');
-  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
-
-  // Get wallet addresses from both Privy and Wagmi
-  const { authenticated: privyAuthenticated } = usePrivy();
-  const { wallets: privyWallets } = useWallets();
-  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-
-  // Get current user's address
-  const getCurrentUserAddress = (): string | undefined => {
-    if (wagmiConnected && wagmiAddress) {
-      return wagmiAddress;
-    }
-    if (privyAuthenticated && privyWallets.length > 0) {
-      return privyWallets[0].address;
-    }
-    return undefined;
-  };
-
-  // Initialize Supabase Realtime connection
-  useEffect(() => {
-    const initializeRealtime = async () => {
-      try {
-        console.log('Connecting to Supabase Realtime...');
-        
-        // Subscribe to vote events
-        const channel = subscribeToVotes((payload) => {
-          const voteData = payload.data as VoteEventData;
-          
-          // Don't show notification for our own votes
-          const currentUserAddress = getCurrentUserAddress();
-          if (voteData.walletAddress && currentUserAddress && 
-              voteData.walletAddress.toLowerCase() === currentUserAddress.toLowerCase()) {
-            return;
-          }
-
-          // Only show notification for votes on this specific pool
-          if (voteData.poolId === id) {
-            const voteEmoji = voteData.vote === "yes" ? "✅" : "❌";
-            const voterDisplay = voteData.walletAddress 
-              ? `${voteData.walletAddress.slice(0, 6)}...${voteData.walletAddress.slice(-4)}`
-              : "Someone";
-            
-            toast(`${voteEmoji} ${voterDisplay} voted ${voteData.vote.toUpperCase()}!`, {
-              description: `On ${voteData.blockchain} blockchain`,
-              duration: 4000,
-            });
-          }
-        });
-
-        // Check connection status
-        if (channel) {
-          setIsRealtimeConnected(true);
-          console.log('Supabase Realtime connected successfully');
-        }
-
-        // Cleanup function
-        return () => {
-          if (channel) {
-            supabase.removeChannel(channel);
-          }
-        };
-        
-      } catch (error) {
-        console.error("Supabase Realtime initialization error:", error);
-        setIsRealtimeConnected(false);
-      }
-    };
-
-    const cleanup = initializeRealtime();
-
-    return () => {
-      cleanup.then((cleanupFn) => cleanupFn && cleanupFn());
-    };
-  }, [id]);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -137,34 +53,10 @@ const PredictionPool = ({
     return () => clearInterval(interval);
   }, [endsAt]);
 
-  const broadcastVoteEvent = async (vote: "yes" | "no") => {
-    const walletAddress = getCurrentUserAddress();
-    
-    if (walletAddress) {
-      try {
-        const blockchain = id.startsWith('flow-') ? 'flow' : 'ronin'; // Default to ronin if not flow
-        
-        await insertVoteEvent({
-          poolId: id,
-          vote,
-          walletAddress,
-          blockchain
-        });
-        
-        console.log('Vote event inserted successfully');
-      } catch (error) {
-        console.error('Error inserting vote event:', error);
-      }
-    }
-  };
-
   const handleVote = (vote: "yes" | "no") => {
     if (onVote) {
       onVote(id, vote);
     }
-    
-    // Insert vote event into database to trigger realtime notifications
-    broadcastVoteEvent(vote);
   };
 
   const handleShareToTwitter = () => {
@@ -172,7 +64,7 @@ const PredictionPool = ({
     const blockchain = id.startsWith('flow-') ? 'Flow' : id.startsWith('ronin-') ? 'Ronin' : 'Blockchain';
     
     // Create engaging tweet text
-    const tweetText = `🔮 Prediction Market Alert!\n\n"${question}"\n\n💰 Pool: $${totalAmount} | Entry: $${participationAmount}\n⏰ ${timeLeft === 'Ended' ? 'Pool Ended' : `Ends in: ${timeLeft}`}\n\n🚀 Vote on ${blockchain} blockchain at PredictMeBro!\n\n#PredictionMarket #${blockchain} #Web3 #Crypto`;
+    const tweetText = `🔮 Prediction Market Alert!\n\n"${question}"\n\n💰 Pool: ${formatEth(totalAmount)} | Entry: ${formatEth(participationAmount)}\n⏰ ${timeLeft === 'Ended' ? 'Pool Ended' : `Ends in: ${timeLeft}`}\n🔒 Anonymous voting until pool ends\n\n🚀 Vote on ${blockchain} blockchain at PredictMeBro!\n\n#PredictionMarket #${blockchain} #Web3 #Crypto`;
     
     // Get current URL for sharing
     const currentUrl = window.location.origin + window.location.pathname;
@@ -190,72 +82,102 @@ const PredictionPool = ({
     });
   };
 
+  // Format question for better display
+  const formatQuestion = (question: string) => {
+    // If it's a generated pool name (starts with pool_), create a better title
+    if (question.startsWith('pool_')) {
+      const parts = question.split('_');
+      if (parts.length >= 3) {
+        // Extract meaningful parts and create a readable title
+        const timestamp = parts[1];
+        const description = parts.slice(2).join(' ').replace(/[_-]/g, ' ');
+        return `Pool #${timestamp.slice(-6)}: ${description}`;
+      }
+    }
+    return question;
+  };
+
+  const displayQuestion = formatQuestion(question);
+  const isLongTitle = displayQuestion.length > 50;
+
   return (
-    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg text-foreground flex-1">{question}</CardTitle>
+    <Card className="glass-card border-0 hover:shadow-glow transition-all duration-300 hover:scale-[1.02] h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <CardTitle 
+              className={`text-white font-semibold leading-tight ${
+                isLongTitle ? 'text-sm' : 'text-base'
+              }`}
+              title={displayQuestion} // Full text on hover
+            >
+              <div className={isLongTitle ? 'line-clamp-2' : 'line-clamp-3'}>
+                {displayQuestion}
+              </div>
+            </CardTitle>
+          </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Badge variant="secondary" className="text-xs">
-              {totalVotes} votes
+            <Badge variant="secondary" className="text-xs bg-purple-900/50 text-purple-200 border-purple-700/50">
+              Anonymous
             </Badge>
-            {isRealtimeConnected ? (
-              <div className="w-2 h-2 rounded-full bg-green-500" title="Realtime connected"></div>
-            ) : (
-              <div className="w-2 h-2 rounded-full bg-red-500" title="Realtime disconnected"></div>
-            )}
             <Button
-              variant="ghost"
               size="sm"
               onClick={handleShareToTwitter}
-              className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
-              title="Share on Twitter/X"
+              className="p-1 h-6 w-6 bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border border-blue-500/30 text-blue-400 hover:from-blue-600/50 hover:to-cyan-600/50 hover:text-blue-300 backdrop-blur-sm"
+              title="Share on Twitter"
             >
-              <Twitter className="h-4 w-4" />
+              <Twitter className="w-3 h-3" />
             </Button>
           </div>
-        </div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Entry: ${participationAmount}</span>
-          <span>Pool: ${totalAmount}</span>
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col">
-        <div className="flex-1">
-          <div className="text-center text-muted-foreground">
-            <p className="text-sm">Anonymous voting</p>
-            {isRealtimeConnected ? (
-              <p className="text-xs text-green-400 mt-1">🔴 Live via Supabase DB</p>
-            ) : (
-              <p className="text-xs text-red-400 mt-1">⚫ Offline mode</p>
-            )}
+      <CardContent className="flex-1 flex flex-col justify-between pt-2">
+        <div className="space-y-4">
+          {/* Pool Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 rounded-lg bg-green-900/20 border border-green-700/30">
+              <div className="text-xl font-bold text-green-300">{formatEth(totalAmount)}</div>
+              <div className="text-xs text-green-200/80 font-medium">Total Pool</div>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-purple-900/20 border border-purple-700/30">
+              <div className="text-xl font-bold text-purple-300">{formatEth(participationAmount)}</div>
+              <div className="text-xs text-purple-200/80 font-medium">To Participate</div>
+            </div>
+          </div>
+
+          {/* Anonymous Voting Message */}
+          <div className="text-center p-4 rounded-lg bg-gray-800/40 border border-gray-700/30">
+            <div className="text-sm text-gray-300 font-medium">🔒 Anonymous Voting</div>
+            <div className="text-xs text-gray-400 mt-1">Vote counts will be revealed after the pool ends</div>
+          </div>
+
+          {/* Time Left */}
+          <div className="text-center p-2 rounded-lg bg-gray-800/40 border border-gray-700/30">
+            <div className={`text-sm font-medium ${
+              timeLeft === 'Ended' ? 'text-red-300' : 'text-blue-300'
+            }`}>
+              {timeLeft === 'Ended' ? '🔒 Pool Ended' : `⏰ ${timeLeft} left`}
+            </div>
           </div>
         </div>
-        
-        <div className="mt-auto space-y-4">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              className="flex-1 h-10 bg-green-500/10 border-green-500/20 hover:bg-green-500/20 text-green-400"
-              onClick={() => handleVote("yes")}
-              disabled={timeLeft === 'Ended'}
-            >
-              Vote YES
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1 h-10 bg-red-500/10 border-red-500/20 hover:bg-red-500/20 text-red-400"
-              onClick={() => handleVote("no")}
-              disabled={timeLeft === 'Ended'}
-            >
-              Vote NO
-            </Button>
-          </div>
-          
-          <div className="text-xs text-muted-foreground text-center">
-            {timeLeft === 'Ended' ? 'Pool Ended' : `Ends in: ${timeLeft}`}
-          </div>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-3 pt-4">
+          <Button
+            onClick={() => handleVote('yes')}
+            disabled={timeLeft === 'Ended'}
+            className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2.5 rounded-lg border border-green-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            👍 Vote Yes
+          </Button>
+          <Button
+            onClick={() => handleVote('no')}
+            disabled={timeLeft === 'Ended'}
+            className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-2.5 rounded-lg border border-red-500/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            👎 Vote No
+          </Button>
         </div>
       </CardContent>
     </Card>

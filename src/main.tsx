@@ -4,6 +4,9 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Toaster } from 'sonner'
 import { WagmiProvider } from 'wagmi'
+import { getDefaultConfig, TantoProvider } from '@sky-mavis/tanto-widget'
+import { ronin, saigon } from 'viem/chains'
+import { defineChain } from 'viem'
 
 import { config } from './config/wagmi'
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx'
@@ -39,7 +42,13 @@ if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-                      <WagmiProvider config={config}>
+      <WagmiProvider config={config}>
+        <TantoProvider 
+          theme="dark"
+          config={{
+            initialChainId: 2020, // Ronin Mainnet
+          }}
+        >
           <PrivyProvider
             appId={import.meta.env.VITE_PRIVY_APP_ID || 'your-privy-app-id'}
             config={{
@@ -58,7 +67,8 @@ if (rootElement && !rootElement.innerHTML) {
               <Toaster richColors position="top-right" />
             </TanStackQueryProvider.Provider>
           </PrivyProvider>
-        </WagmiProvider>
+        </TantoProvider>
+      </WagmiProvider>
     </StrictMode>,
   )
 }

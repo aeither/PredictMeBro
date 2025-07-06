@@ -11,6 +11,8 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #0a0a0a;
+  color: #ededed;
 }
 
 code {
@@ -131,8 +133,69 @@ code {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    border-color: hsl(240 3.7% 15.9%);
   }
   body {
     @apply bg-background text-foreground;
+    background: #0a0a0a;
+    color: #ededed;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, hsl(263 70% 50%), hsl(220 70% 50%));
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(135deg, hsl(142 76% 36%), hsl(120 76% 50%));
+  }
+  
+  .bg-gradient-card {
+    background: linear-gradient(135deg, hsl(240 3.7% 15.9%), hsl(240 5% 18%));
+  }
+  
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, hsl(263 70% 50% / 0.1), hsl(220 70% 50% / 0.1));
+    border: 1px solid hsl(263 70% 50% / 0.2);
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 40px hsl(263 70% 50% / 0.3);
+  }
+  
+  .glass-card {
+    background: rgba(30, 30, 30, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  .glass-dark {
+    background: rgba(15, 15, 15, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 }

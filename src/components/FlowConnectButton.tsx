@@ -1,5 +1,3 @@
-"use client";
-
 import { usePrivy, useWallets, useLoginWithEmail } from '@privy-io/react-auth';
 import { Button } from "@/components/ui/button";
 import { Wallet, Mail } from "lucide-react";
@@ -64,7 +62,7 @@ export function FlowConnectButton() {
 
   if (!ready) {
     return (
-      <Button variant="outline" disabled className="flex items-center space-x-2">
+      <Button disabled className="flex items-center space-x-2 bg-gradient-to-r from-gray-600 to-gray-700 text-gray-300 border-0 opacity-50 cursor-not-allowed">
         <Wallet className="w-4 h-4 animate-spin" />
         <span>Loading...</span>
       </Button>
@@ -96,8 +94,7 @@ export function FlowConnectButton() {
     <Dialog open={showEmailLogin} onOpenChange={setShowEmailLogin}>
       <DialogTrigger asChild>
         <Button 
-          variant="outline" 
-          className="flex items-center space-x-2 border-purple-600 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300"
+          className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg backdrop-blur-sm"
         >
           <Wallet className="w-4 h-4" />
           <span>Connect Flow</span>
@@ -146,8 +143,7 @@ export function FlowConnectButton() {
                 
                 <Button
                   onClick={() => login()}
-                  variant="outline"
-                  className="w-full border-slate-600 text-gray-300 hover:bg-slate-800 hover:text-white"
+                  className="w-full bg-gradient-to-r from-gray-700/30 to-gray-800/30 border border-gray-600/50 text-gray-300 hover:from-gray-600/50 hover:to-gray-700/50 hover:text-white backdrop-blur-sm"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
                   Connect External Wallet
@@ -184,8 +180,7 @@ export function FlowConnectButton() {
                     setCodeSent(false);
                     setCode('');
                   }}
-                  variant="outline"
-                  className="w-full border-slate-600 text-gray-300 hover:bg-slate-800 hover:text-white"
+                  className="w-full bg-gradient-to-r from-gray-700/30 to-gray-800/30 border border-gray-600/50 text-gray-300 hover:from-gray-600/50 hover:to-gray-700/50 hover:text-white backdrop-blur-sm"
                 >
                   Back to Email
                 </Button>

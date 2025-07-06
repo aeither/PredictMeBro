@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Use proper environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dakggcfdthlsxkyobohc.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://dakggcfdthlsxkyobohc.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -25,15 +25,15 @@ export const insertEvent = async (type: string, data: any) => {
   console.log('🔄 Attempting to insert event:', { type, data })
   
   // Check if we have the required environment variables
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const url = import.meta.env.VITE_SUPABASE_URL
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
   
   if (!url || !key) {
     const missingVars = []
-    if (!url) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
-    if (!key) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    if (!url) missingVars.push('VITE_SUPABASE_URL')
+    if (!key) missingVars.push('VITE_SUPABASE_ANON_KEY')
     
-    const error = new Error(`Missing environment variables: ${missingVars.join(', ')}. Please create .env.local file with your Supabase credentials.`)
+    const error = new Error(`Missing environment variables: ${missingVars.join(', ')}. Please create .env file with your Supabase credentials.`)
     console.error('❌ Environment error:', error.message)
     throw error
   }
@@ -61,7 +61,7 @@ export const insertEvent = async (type: string, data: any) => {
     } else if (error.code === '42501') {
       throw new Error('Permission denied. Please check your Row Level Security policies in Supabase.')
     } else if (error.message.includes('Invalid API key')) {
-      throw new Error('Invalid Supabase API key. Please check your NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local')
+      throw new Error('Invalid Supabase API key. Please check your VITE_SUPABASE_ANON_KEY in .env')
     } else {
       throw new Error(`Database error: ${error.message}`)
     }
@@ -234,12 +234,12 @@ export const getPoolById = async (poolId: string) => {
   return data
 }
 
-// Update pool vote counts
+// Update pool votes
 export const updatePoolVotes = async (poolId: string, yesVotes: number, noVotes: number) => {
   const { data, error } = await supabase
     .from(TABLES.POOLS)
-    .update({ 
-      yes_votes: yesVotes, 
+    .update({
+      yes_votes: yesVotes,
       no_votes: noVotes,
       updated_at: new Date().toISOString()
     })
@@ -260,37 +260,16 @@ export const subscribeToPoolCreated = (callback: (payload: any) => void) => {
   return subscribeToEvents(EVENT_TYPES.POOL_CREATED, callback)
 }
 
-// Subscribe to pool table changes (direct table subscription)
+// Subscribe to pool changes
 export const subscribeToPoolChanges = (callback: (payload: any) => void) => {
-  const channelName = `realtime:public:${TABLES.POOLS}`
-  
-  console.log(`🔄 Subscribing to pool changes on channel: ${channelName}`)
-  
   const channel = supabase
-    .channel(channelName)
+    .channel('pools_changes')
     .on(
       'postgres_changes',
-      { 
-        event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-        schema: 'public', 
-        table: TABLES.POOLS
-      },
-      (payload) => {
-        console.log(`📡 Pool change received on ${channelName}:`, payload)
-        callback(payload)
-      }
+      { event: '*', schema: 'public', table: TABLES.POOLS },
+      callback
     )
-    .subscribe((status, err) => {
-      if (status === 'SUBSCRIBED') {
-        console.log(`✅ Successfully subscribed to ${channelName}`)
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error(`❌ Error subscribing to ${channelName}:`, err)
-      } else if (status === 'TIMED_OUT') {
-        console.warn(`⏱️ Subscription to ${channelName} timed out`)
-      } else if (status === 'CLOSED') {
-        console.log(`🔒 Subscription to ${channelName} closed`)
-      }
-    })
+    .subscribe()
 
   return channel
 } 
